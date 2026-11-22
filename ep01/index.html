@@ -10,8 +10,16 @@
 @font-face { font-family: JBM; src: url(fonts/JetBrainsMono.ttf); font-weight: 100 800; }
 html, body { margin: 0; background: #010402; overflow: hidden; }
 canvas { display: block; }
-body.lab { height: 100vh; display: flex; justify-content: center; align-items: center; }
-body.lab canvas { height: 100vh; width: auto; max-width: 100vw; object-fit: contain; touch-action: none; }
+body.lab, body.fit { height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; }
+body.lab canvas, body.fit canvas { width: min(100vw, calc(100vh * 9 / 16)); width: min(100vw, calc(100dvh * 9 / 16)); height: auto; }   /* fit 9:16 inside any screen, never stretched */
+body.lab canvas { touch-action: none; }
+body.fit canvas { cursor: pointer; }
+#play { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1.6vh; text-align: center; }
+#play[hidden] { display: none; }
+#play button { font: 600 clamp(15px, 2.2vh, 22px) JBM, monospace; color: #010402; background: #4DFF88; border: 0; border-radius: 1.2vh;
+  padding: 1.6vh 3vh; box-shadow: 0 0 3vh #4DFF8866; cursor: pointer; }
+#play button:focus-visible { outline: 2px solid #E6FFEC; outline-offset: 3px; }
+#play a { font: 500 clamp(12px, 1.7vh, 17px) JBM, monospace; color: #8DFFB0; background: #010402e6; padding: .7vh 1.6vh; border-radius: 999px; }
 #ui { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(92vw, 52vh); box-sizing: border-box;
   padding: 1.4vh 2vh; border: 1px solid #8DFFB044; border-radius: 1vh; background: #010402dd;
   font: 500 clamp(12px, 1.7vh, 18px) JBM, monospace; color: #8DFFB0; display: grid; gap: 1vh; }
@@ -30,6 +38,7 @@ body.lab canvas { height: 100vh; width: auto; max-width: 100vw; object-fit: cont
   <label><input id="sIn" type="checkbox"> divide scores by √d</label>
   <div>tip: drag on the screen to move the probe point · <a href="?">play the film</a></div>
 </div>
+<div id="play" hidden><button id="playBtn" type="button">▶ Play with sound</button><a href="?lab=1&d=1024">or try the lab →</a></div>
 <script>
 'use strict';
 // ───────────────────────── constants and helpers ─────────────────────────
@@ -538,10 +547,36 @@ function startLab() {
   window.TEXTS = t => { render(t); return TEXTSET; };
   window.render = render;
   window.READY = true;
-  if (!navigator.webdriver && !QS.has('still')) {   // opened in a normal browser: play the film live (no sound)
-    const t0 = performance.now(); const loop = now => { render(((now - t0) / 1000) % TL.dur); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
-  }
+  if (!navigator.webdriver && !QS.has('still')) watch();   // opened in a normal browser (the render tools use webdriver)
 })();
+
+// The web film: fitted to the screen, drawn live, each frame at the soundtrack's clock so picture and sound stay locked.
+// Browsers only start sound after a tap, so it waits on the poster frame with a play button. Tap the film to pause.
+function watch() {
+  document.body.classList.add('fit');
+  const cv = document.getElementById('c'), box = document.getElementById('play'), btn = document.getElementById('playBtn');
+  const au = new Audio('audio.m4a'); au.preload = 'auto';
+  let silent = false, t0 = 0, pos = 0, running = false;               // pos: where the silent clock was paused
+  au.addEventListener('error', () => { silent = true; });              // no soundtrack next to the page (e.g. a dev server): run on the wall clock
+  const now = () => silent ? pos + (performance.now() - t0) / 1000 : au.currentTime;
+  const frame = () => {
+    if (!running) return;
+    const t = now();
+    if (t >= TL.dur || (!silent && au.ended)) { stop('↻ Watch again'); pos = 0; render(TL.dur - .01); return; }
+    render(t); requestAnimationFrame(frame);
+  };
+  const start = () => {
+    box.hidden = true; running = true;
+    if (au.ended || au.currentTime >= TL.dur - .05) au.currentTime = 0;
+    if (silent) { t0 = performance.now(); requestAnimationFrame(frame); return; }
+    au.play().then(() => requestAnimationFrame(frame)).catch(() => { silent = true; t0 = performance.now(); requestAnimationFrame(frame); });
+  };
+  const stop = label => { if (silent) pos = now(); else au.pause(); running = false; btn.textContent = label; box.hidden = false; };
+  btn.onclick = start;
+  cv.addEventListener('click', () => running ? stop('▶ Resume') : start());
+  render(45.6);                                                        // the poster frame while waiting
+  box.hidden = false; btn.focus({ preventScroll: true });
+}
 </script>
 </body>
 </html>
