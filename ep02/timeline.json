@@ -1,0 +1,798 @@
+{
+ "fps": 24,
+ "size": [
+  1080,
+  1920
+ ],
+ "bpm": 100,
+ "dur": 52.994,
+ "marks": {
+  "power": 0.0,
+  "hookA": 0.25,
+  "hookB": 0.6,
+  "equal": 2.52,
+  "why": 5.48,
+  "vec0": 8.05,
+  "vec1": 10.46,
+  "cut0": 13.2,
+  "cut1": 14.3,
+  "drop0": 14.6,
+  "drop1": 15.6,
+  "qkv": 16.5,
+  "mat0": 19.2,
+  "slice": 20.26,
+  "noextra": 21.36,
+  "one0": 24.54,
+  "softmax": 25.96,
+  "budget": 27.18,
+  "blend": 28.38,
+  "it": 30.54,
+  "layer": 31.44,
+  "h4": 33.1,
+  "h9": 34.6,
+  "h12": 36.06,
+  "melt0": 39.0,
+  "melt1": 40.24,
+  "apart0": 41.28,
+  "apart1": 42.2,
+  "side": 42.2,
+  "verdict": 45.0,
+  "lookups": 45.9,
+  "title": 47.76,
+  "end": 52.994
+ },
+ "lines": [
+  {
+   "id": "L01",
+   "t0": 0.5,
+   "t1": 3.375,
+   "text": "Twelve attention heads cost exactly the same as one.",
+   "sub": "Twelve attention heads cost exactly the same as one.",
+   "words": [
+    [
+     "12",
+     0.5,
+     0.64
+    ],
+    [
+     "attention",
+     0.64,
+     0.94
+    ],
+    [
+     "heads",
+     0.94,
+     1.34
+    ],
+    [
+     "cost",
+     1.34,
+     1.68
+    ],
+    [
+     "exactly",
+     1.68,
+     2.02
+    ],
+    [
+     "the",
+     2.02,
+     2.52
+    ],
+    [
+     "same",
+     2.52,
+     2.76
+    ],
+    [
+     "as",
+     2.76,
+     2.94
+    ],
+    [
+     "one.",
+     2.94,
+     3.18
+    ]
+   ]
+  },
+  {
+   "id": "L02",
+   "t0": 4.2,
+   "t1": 6.812,
+   "text": "So why does every Transformer split its attention?",
+   "sub": "So why does every Transformer split its attention?",
+   "words": [
+    [
+     "So",
+     4.2,
+     4.28
+    ],
+    [
+     "why",
+     4.28,
+     4.48
+    ],
+    [
+     "does",
+     4.48,
+     4.64
+    ],
+    [
+     "every",
+     4.64,
+     4.94
+    ],
+    [
+     "transformer",
+     4.94,
+     5.48
+    ],
+    [
+     "split",
+     5.48,
+     5.98
+    ],
+    [
+     "its",
+     5.98,
+     6.18
+    ],
+    [
+     "attention?",
+     6.18,
+     6.4
+    ]
+   ]
+  },
+  {
+   "id": "L03",
+   "t0": 7.8,
+   "t1": 11.758,
+   "text": "In this real model, each word is three hundred eighty-four numbers.",
+   "sub": "In this real model, each word is 384 numbers.",
+   "words": [
+    [
+     "In",
+     7.8,
+     7.88
+    ],
+    [
+     "this",
+     7.88,
+     8.02
+    ],
+    [
+     "real",
+     8.02,
+     8.28
+    ],
+    [
+     "model,",
+     8.28,
+     8.76
+    ],
+    [
+     "each",
+     9.06,
+     9.16
+    ],
+    [
+     "word",
+     9.16,
+     9.46
+    ],
+    [
+     "is",
+     9.46,
+     9.66
+    ],
+    [
+     "384",
+     9.66,
+     10.46
+    ],
+    [
+     "numbers.",
+     10.46,
+     11.4
+    ]
+   ]
+  },
+  {
+   "id": "L04",
+   "t0": 12.6,
+   "t1": 18.479,
+   "text": "Cut them into twelve slices of thirty-two. Each slice gets its own queries, keys and values.",
+   "sub": "Cut them into 12 slices of 32. Each slice gets its own queries, keys and values.",
+   "words": [
+    [
+     "Cut",
+     12.6,
+     12.74
+    ],
+    [
+     "them",
+     12.74,
+     12.98
+    ],
+    [
+     "into",
+     12.98,
+     13.2
+    ],
+    [
+     "12",
+     13.2,
+     13.5
+    ],
+    [
+     "slices",
+     13.5,
+     13.98
+    ],
+    [
+     "of",
+     13.98,
+     14.3
+    ],
+    [
+     "32.",
+     14.3,
+     14.6
+    ],
+    [
+     "Each",
+     15.28,
+     15.42
+    ],
+    [
+     "slice",
+     15.42,
+     15.72
+    ],
+    [
+     "gets",
+     15.72,
+     16.1
+    ],
+    [
+     "its",
+     16.1,
+     16.3
+    ],
+    [
+     "own",
+     16.3,
+     16.5
+    ],
+    [
+     "queries,",
+     16.5,
+     16.86
+    ],
+    [
+     "keys",
+     16.86,
+     17.42
+    ],
+    [
+     "and",
+     17.42,
+     17.78
+    ],
+    [
+     "values.",
+     17.78,
+     18.12
+    ]
+   ]
+  },
+  {
+   "id": "L05",
+   "t0": 19.2,
+   "t1": 22.265,
+   "text": "Same matrices, just sliced. Not one extra weight.",
+   "sub": "Same matrices, just sliced. Not one extra weight.",
+   "words": [
+    [
+     "Same",
+     19.2,
+     19.38
+    ],
+    [
+     "matrices",
+     19.38,
+     19.92
+    ],
+    [
+     "just",
+     19.92,
+     20.26
+    ],
+    [
+     "sliced,",
+     20.26,
+     20.54
+    ],
+    [
+     "not",
+     21.06,
+     21.18
+    ],
+    [
+     "one",
+     21.18,
+     21.36
+    ],
+    [
+     "extra",
+     21.36,
+     21.62
+    ],
+    [
+     "weight.",
+     21.62,
+     22.04
+    ]
+   ]
+  },
+  {
+   "id": "L06",
+   "t0": 23.4,
+   "t1": 29.009,
+   "text": "Here's what you get. One head gives each word one softmax: one budget, spent on one blend.",
+   "sub": "Here's what you get. One head gives each word one softmax: one budget, spent on one blend.",
+   "words": [
+    [
+     "Here's",
+     23.4,
+     23.66
+    ],
+    [
+     "what",
+     23.66,
+     23.8
+    ],
+    [
+     "you",
+     23.8,
+     23.94
+    ],
+    [
+     "get,",
+     23.94,
+     24.18
+    ],
+    [
+     "one",
+     24.54,
+     24.62
+    ],
+    [
+     "head",
+     24.62,
+     24.86
+    ],
+    [
+     "gives",
+     24.86,
+     25.12
+    ],
+    [
+     "each",
+     25.12,
+     25.38
+    ],
+    [
+     "word",
+     25.38,
+     25.7
+    ],
+    [
+     "one",
+     25.7,
+     25.96
+    ],
+    [
+     "softmax,",
+     25.96,
+     26.6
+    ],
+    [
+     "one",
+     27.08,
+     27.18
+    ],
+    [
+     "budget",
+     27.18,
+     27.58
+    ],
+    [
+     "spent",
+     27.58,
+     27.92
+    ],
+    [
+     "on",
+     27.92,
+     28.18
+    ],
+    [
+     "one",
+     28.18,
+     28.38
+    ],
+    [
+     "blend.",
+     28.38,
+     28.64
+    ]
+   ]
+  },
+  {
+   "id": "L07",
+   "t0": 30.0,
+   "t1": 32.26,
+   "text": "Watch the word, it, in the model's last layer.",
+   "sub": "Watch the word \"it\" in the model's last layer.",
+   "words": [
+    [
+     "Watch",
+     30.0,
+     30.2
+    ],
+    [
+     "the",
+     30.2,
+     30.36
+    ],
+    [
+     "word",
+     30.36,
+     30.54
+    ],
+    [
+     "it",
+     30.54,
+     30.7
+    ],
+    [
+     "in",
+     30.7,
+     30.94
+    ],
+    [
+     "the",
+     30.94,
+     31.04
+    ],
+    [
+     "model's",
+     31.04,
+     31.44
+    ],
+    [
+     "last",
+     31.44,
+     31.64
+    ],
+    [
+     "layer.",
+     31.64,
+     31.96
+    ]
+   ]
+  },
+  {
+   "id": "L08",
+   "t0": 33.0,
+   "t1": 37.251,
+   "text": "Head four pulls from cat. Head nine, from tired. Head twelve, from mat.",
+   "sub": "Head 4 pulls from \"cat\". Head 9, from \"tired\". Head 12, from \"mat\".",
+   "words": [
+    [
+     "Head",
+     33.0,
+     33.1
+    ],
+    [
+     "4",
+     33.1,
+     33.34
+    ],
+    [
+     "pulls",
+     33.34,
+     33.62
+    ],
+    [
+     "from",
+     33.62,
+     33.92
+    ],
+    [
+     "Cat,",
+     33.92,
+     34.16
+    ],
+    [
+     "Head",
+     34.52,
+     34.6
+    ],
+    [
+     "9",
+     34.6,
+     34.88
+    ],
+    [
+     "from",
+     34.88,
+     35.2
+    ],
+    [
+     "Tired,",
+     35.2,
+     35.68
+    ],
+    [
+     "Head",
+     35.96,
+     36.06
+    ],
+    [
+     "12",
+     36.06,
+     36.38
+    ],
+    [
+     "from",
+     36.38,
+     36.72
+    ],
+    [
+     "Matt.",
+     36.72,
+     36.98
+    ]
+   ]
+  },
+  {
+   "id": "L09",
+   "t0": 38.4,
+   "t1": 43.695,
+   "text": "One head would melt these into a single average. Twelve keep them apart, side by side.",
+   "sub": "One head would melt these into a single average. Twelve keep them apart, side by side.",
+   "words": [
+    [
+     "One",
+     38.4,
+     38.54
+    ],
+    [
+     "head",
+     38.54,
+     38.82
+    ],
+    [
+     "would",
+     38.82,
+     39.0
+    ],
+    [
+     "melt",
+     39.0,
+     39.22
+    ],
+    [
+     "these",
+     39.22,
+     39.5
+    ],
+    [
+     "into",
+     39.5,
+     39.82
+    ],
+    [
+     "a",
+     39.82,
+     39.98
+    ],
+    [
+     "single",
+     39.98,
+     40.24
+    ],
+    [
+     "average,",
+     40.24,
+     40.76
+    ],
+    [
+     "12",
+     41.28,
+     41.46
+    ],
+    [
+     "keep",
+     41.46,
+     41.72
+    ],
+    [
+     "them",
+     41.72,
+     41.94
+    ],
+    [
+     "apart",
+     41.94,
+     42.2
+    ],
+    [
+     "side",
+     42.2,
+     42.72
+    ],
+    [
+     "by",
+     42.72,
+     43.04
+    ],
+    [
+     "side.",
+     43.04,
+     43.62
+    ]
+   ]
+  },
+  {
+   "id": "L10",
+   "t0": 45.0,
+   "t1": 49.094,
+   "text": "Same weights. Twelve lookups instead of one. That's multi-head attention.",
+   "sub": "Same weights. 12 lookups instead of 1. That's multi-head attention.",
+   "words": [
+    [
+     "Same",
+     45.0,
+     45.22
+    ],
+    [
+     "weights",
+     45.22,
+     45.46
+    ],
+    [
+     "12",
+     45.46,
+     45.9
+    ],
+    [
+     "look",
+     45.9,
+     46.16
+    ],
+    [
+     "-ups",
+     46.16,
+     46.36
+    ],
+    [
+     "instead",
+     46.36,
+     46.7
+    ],
+    [
+     "of",
+     46.7,
+     47.0
+    ],
+    [
+     "one,",
+     47.0,
+     47.2
+    ],
+    [
+     "that's",
+     47.52,
+     47.76
+    ],
+    [
+     "multi",
+     47.76,
+     47.96
+    ],
+    [
+     "-head",
+     47.96,
+     48.4
+    ],
+    [
+     "attention.",
+     48.4,
+     48.72
+    ]
+   ]
+  }
+ ],
+ "cues": [
+  {
+   "t0": 0.5,
+   "t1": 3.975,
+   "text": "Twelve attention heads cost exactly the same as one."
+  },
+  {
+   "t0": 4.2,
+   "t1": 7.412,
+   "text": "So why does every Transformer split its attention?"
+  },
+  {
+   "t0": 7.8,
+   "t1": 12.358,
+   "text": "In this real model, each word is 384 numbers."
+  },
+  {
+   "t0": 12.6,
+   "t1": 15.24,
+   "text": "Cut them into 12 slices of 32."
+  },
+  {
+   "t0": 15.28,
+   "t1": 19.079,
+   "text": "Each slice gets its own queries, keys and values."
+  },
+  {
+   "t0": 19.2,
+   "t1": 22.865,
+   "text": "Same matrices, just sliced. Not one extra weight."
+  },
+  {
+   "t0": 23.4,
+   "t1": 24.5,
+   "text": "Here's what you get."
+  },
+  {
+   "t0": 24.54,
+   "t1": 29.609,
+   "text": "One head gives each word one softmax: one budget, spent on one blend."
+  },
+  {
+   "t0": 30.0,
+   "t1": 32.86,
+   "text": "Watch the word \"it\" in the model's last layer."
+  },
+  {
+   "t0": 33.0,
+   "t1": 34.48,
+   "text": "Head 4 pulls from \"cat\"."
+  },
+  {
+   "t0": 34.52,
+   "t1": 37.851,
+   "text": "Head 9, from \"tired\". Head 12, from \"mat\"."
+  },
+  {
+   "t0": 38.4,
+   "t1": 41.24,
+   "text": "One head would melt these into a single average."
+  },
+  {
+   "t0": 41.28,
+   "t1": 44.295,
+   "text": "Twelve keep them apart, side by side."
+  },
+  {
+   "t0": 45.0,
+   "t1": 46.96,
+   "text": "Same weights. 12 lookups instead of 1."
+  },
+  {
+   "t0": 47.0,
+   "t1": 49.694,
+   "text": "That's multi-head attention."
+  }
+ ]
+}

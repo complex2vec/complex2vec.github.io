@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Twelve heads, one price</title>
+<style>
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText.ttf); font-weight: 400 700; }
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText-Italic.ttf); font-style: italic; font-weight: 400 700; }
+@font-face { font-family: JBM; src: url(fonts/JetBrainsMono.ttf); font-weight: 100 800; }
+html, body { margin: 0; background: #010402; overflow: hidden; }
+canvas { display: block; }
+body.lab, body.fit { height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; }
+body.lab canvas, body.fit canvas { width: min(100vw, calc(100vh * 9 / 16)); width: min(100vw, calc(100dvh * 9 / 16)); height: auto; }   /* fit 9:16 inside any screen, never stretched */
+body.lab canvas { touch-action: none; cursor: pointer; }
+body.fit canvas { cursor: pointer; }
+#play { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1.6vh; text-align: center; }
+#play[hidden] { display: none; }
+#play button { font: 600 clamp(15px, 2.2vh, 22px) JBM, monospace; color: #010402; background: #4DFF88; border: 0; border-radius: 1.2vh;
+  padding: 1.6vh 3vh; box-shadow: 0 0 3vh #4DFF8866; cursor: pointer; }
+#play button:focus-visible { outline: 2px solid #E6FFEC; outline-offset: 3px; }
+#play a { font: 500 clamp(12px, 1.7vh, 17px) JBM, monospace; color: #8DFFB0; background: #010402e6; padding: .7vh 1.6vh; border-radius: 999px; }
+#ui { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(92vw, 52vh); box-sizing: border-box;
+  padding: 1.4vh 2vh; border: 1px solid #8DFFB044; border-radius: 1vh; background: #010402dd;
+  font: 500 clamp(12px, 1.7vh, 18px) JBM, monospace; color: #8DFFB0; display: grid; gap: 1vh; }
+#ui[hidden] { display: none; }
+#ui label { display: flex; align-items: center; gap: 1.2vh; }
+#ui select { flex: 1; min-width: 0; font: inherit; color: #E6FFEC; background: #0B2412; border: 1px solid #8DFFB066; border-radius: .6vh; padding: .4vh .6vh; }
+#ui input[type=range] { flex: 1; accent-color: #4DFF88; }
+#ui input[type=checkbox] { accent-color: #FFB547; width: 2vh; height: 2vh; }
+#ui .v { min-width: 4ch; text-align: right; color: #E6FFEC; }
+#ui a { color: #8DFFB0; opacity: .7; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div id="ui" hidden>
+  <label>sentence <select id="sIn"></select></label>
+  <label>layer <input id="lIn" type="range" min="1" max="12" step="1" value="12"><span class="v" id="lOut">12</span></label>
+  <label><input id="mIn" type="checkbox"> melt the 12 heads into one average</label>
+  <div>tip: tap a word to see what each head pulls into it · <a href="?">play the film</a></div>
+</div>
+<div id="play" hidden><button id="playBtn" type="button">▶ Play with sound</button><a href="?lab=1">or try the lab →</a></div>
+<script>
+'use strict';
+// ───────────────────────── constants and helpers ─────────────────────────
+const W = 1080, H = 1920, QS = new URLSearchParams(location.search), LAB = QS.has('lab');
+const COL = { bg: '#010402', amb: '#0B2412', beam: '#4DFF88', ui: '#8DFFB0', hot: '#E6FFEC', amber: '#FFB547' };
+const G = { x0: 60, y0: 520, x1: 1020, y1: 1288, cx: 540, cy: 904 };          // the graticule on the glass (10 × 8 div of 96 px)
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), lerp = (a, b, u) => a + (b - a) * u;
+const seg = (t, a, b) => b > a ? clamp((t - a) / (b - a)) : (t >= a ? 1 : 0);
+const ss = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const eio = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eo = x => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const bo = x => { x = clamp(x); const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };   // back-out: a small overshoot
+const flash = (t, t0, d = .35) => t >= t0 ? clamp(1 - (t - t0) / d) : 0;
+const F = { mono: (px, w = 500) => `${w} ${px}px JBM`, serif: (px, w = 400) => `${w} ${px}px STIX`, ital: (px, w = 400) => `italic ${w} ${px}px STIX` };
+const fmtN = n => Math.round(n).toLocaleString('en-US');
+
+// ───────────────────────── canvases: four light channels + glow ─────────────────────────
+const X = document.getElementById('c').getContext('2d');
+function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+const [cBeam, BEAM] = mk(W, H), [cUi, UI] = mk(W, H), [cHot, HOT] = mk(W, H), [cAmb, AMB] = mk(W, H);
+const [cGlow, GLOW] = mk(W / 2, H / 2);
+const LEVELS = [[4, 1.2, .55], [8, 2.0, .45], [16, 2.6, .32], [32, 3.0, .22]].map(([ds, b, w]) => { const [c, x] = mk(W / ds, H / ds); return { c, x, b, w }; });
+const [cBg, BG] = mk(W, H), [cVig, VIG] = mk(W, H);
+(function screen() {
+  BG.fillStyle = COL.bg; BG.fillRect(0, 0, W, H);
+  let g = BG.createRadialGradient(540, 900, 0, 540, 900, 1250); g.addColorStop(0, 'rgba(11,36,18,.62)'); g.addColorStop(1, 'rgba(11,36,18,0)');
+  BG.fillStyle = g; BG.fillRect(0, 0, W, H);
+  g = VIG.createRadialGradient(540, 960, 520, 540, 960, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.55)');
+  VIG.fillStyle = g; VIG.fillRect(0, 0, W, H);
+})();
+function clearLayers() { for (const c of [BEAM, UI, HOT, AMB]) { c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.clearRect(0, 0, W, H); } }
+function compose() {
+  X.globalCompositeOperation = 'source-over'; X.globalAlpha = 1; X.drawImage(cBg, 0, 0);
+  GLOW.globalCompositeOperation = 'source-over'; GLOW.globalAlpha = 1; GLOW.clearRect(0, 0, W / 2, H / 2);
+  GLOW.drawImage(cBeam, 0, 0, W / 2, H / 2); GLOW.globalCompositeOperation = 'lighter';
+  GLOW.globalAlpha = 1.25; GLOW.drawImage(cHot, 0, 0, W / 2, H / 2); GLOW.globalAlpha = .9; GLOW.drawImage(cAmb, 0, 0, W / 2, H / 2);
+  GLOW.globalAlpha = .2; GLOW.drawImage(cUi, 0, 0, W / 2, H / 2); GLOW.globalAlpha = 1;
+  X.globalCompositeOperation = 'lighter';
+  for (const L of LEVELS) {
+    L.x.clearRect(0, 0, L.c.width, L.c.height); L.x.filter = `blur(${L.b}px)`; L.x.drawImage(cGlow, 0, 0, L.c.width, L.c.height); L.x.filter = 'none';
+    X.globalAlpha = L.w; X.drawImage(L.c, 0, 0, W, H);
+  }
+  X.globalAlpha = 1; X.drawImage(cBeam, 0, 0); X.drawImage(cUi, 0, 0); X.drawImage(cHot, 0, 0); X.drawImage(cAmb, 0, 0);
+  X.globalCompositeOperation = 'source-over'; X.drawImage(cVig, 0, 0);
+}
+
+// ───────────────────────── drawing primitives ─────────────────────────
+function line(c, pts, color, a, w, dash) {
+  if (pts.length < 2 || a <= 0) return;
+  c.save(); c.globalAlpha = clamp(a); c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; if (dash) c.setLineDash(dash);
+  c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.stroke(); c.restore();
+}
+function dot(c, x, y, r, color, a = 1) { if (a <= 0 || r <= 0) return; c.save(); c.globalAlpha = clamp(a); c.fillStyle = color; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); }
+function ring(c, x, y, r, color, a = 1, w = 3) { if (a <= 0) return; c.save(); c.globalAlpha = clamp(a); c.strokeStyle = color; c.lineWidth = w; c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); c.restore(); }
+function text(c, s, x, y, font, color, a = 1, align = 'left') { if (a <= 0) return; c.save(); c.globalAlpha = clamp(a); c.font = font; c.fillStyle = color; c.textAlign = align; c.fillText(s, x, y); c.restore(); }
+function tw(s, font) { X.font = font; return X.measureText(s).width; }
+function rect(c, x0, y0, x1, y1, color, a, w = 1.6) { line(c, [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], color, a, w); }
+// text written by the beam: a clip sweeps left → right with a white-hot writing point, then a flash
+function written(t, t0, t1, s, x, y, font, color = COL.ui, a = 1, layer = UI) {
+  if (t < t0 || a <= 0) return 0;
+  const w = tw(s, font), p = seg(t, t0, t1), px = parseFloat(font.match(/(\d+)px/)[1]);
+  layer.save(); layer.beginPath(); layer.rect(x - 4, y - px * 1.2, w * p + 6, px * 1.6); layer.clip(); text(layer, s, x, y, font, color, a); layer.restore();
+  if (p < 1) dot(HOT, x + w * p, y - px * .32 + Math.sin(t * 90) * px * .18, 4.5, COL.hot, a);
+  const f = flash(t, t1, .4); if (f > 0) text(HOT, s, x, y, font, COL.hot, f * .8 * a);
+  return p;
+}
+function graticule(a) {
+  if (a <= 0) return;
+  for (let i = 1; i < 10; i++) { const x = G.x0 + 96 * i; line(UI, [[x, G.y0], [x, G.y1]], COL.ui, .16 * a, 1.2, [2, 7]); }
+  for (let i = 1; i < 8; i++) { const y = G.y0 + 96 * i; line(UI, [[G.x0, y], [G.x1, y]], COL.ui, .16 * a, 1.2, [2, 7]); }
+  rect(UI, G.x0, G.y0, G.x1, G.y1, COL.ui, .42 * a);
+}
+
+// ───────────────────────── data: a real model's attention (data.json, made by data.py) ─────────────────────────
+let DATA = null, S0 = null, FILM = null, ATT = [], WQ = null;
+function decode() {
+  const u8 = s => Uint8Array.from(atob(s), ch => ch.charCodeAt(0));
+  ATT = DATA.sentences.map(s => u8(s.att));                 // [L][h][i][j] flat, weights × 255
+  const q = u8(DATA.wq), [c, x] = mk(96, 96), img = x.createImageData(96, 96);
+  for (let o = 0; o < 96; o++) for (let i = 0; i < 96; i++) {   // drawn with output dims across (so a head is a vertical band) and input dims down
+    const v = q[o * 96 + i], p = (i * 96 + o) * 4;
+    img.data[p] = 77; img.data[p + 1] = 255; img.data[p + 2] = 136; img.data[p + 3] = v;
+  }
+  x.putImageData(img, 0, 0); WQ = c;
+  S0 = DATA.sentences[0]; FILM = S0.film;
+}
+const attW = (si, L, h, i, j) => { const T = DATA.sentences[si].T; return ATT[si][((L * DATA.heads + h) * T + i) * T + j] / 255; };
+
+// ───────────────────────── geometry shared by the film and the lab ─────────────────────────
+const NH = 12, GX0 = 168, GX1 = 960;
+const rowY = k => 584 + k * 52;                     // head rows (and the 12 channels after the cut)
+const colX = (j, T) => GX0 + j * (GX1 - GX0) / (T - 1);
+const vecX = i => GX0 + i * (GX1 - GX0) / 383;       // the 384 numbers on one channel
+const VEC_Y = 880, VEC_K = 110;                      // one channel: baseline and px per unit
+const STRIP_K = 10.5;                                // px per unit on the 12 thin channels
+const radius = w => 3 + 20 * Math.sqrt(clamp(w));
+function tokens(toks, t, a, hiIdx, hiA, amberSet) {  // the sentence along the bottom of the graticule, staggered on two lines
+  const T = toks.length, out = [];
+  toks.forEach((s, j) => {
+    const x = colX(j, T), y = j % 2 ? 1262 : 1222, special = s === '<s>' || s === '</s>' || s === '.';
+    const font = F.mono(26, j === hiIdx ? 700 : 500);
+    line(UI, [[x, y - 30], [x, y - 22]], COL.ui, .35 * a, 1.2);
+    if (amberSet && amberSet.has(j)) text(AMB, s, x, y, font, COL.amber, a, 'center');
+    else text(UI, s, x, y, font, COL.ui, a * (special ? .45 : .9), 'center');
+    if (j === hiIdx && hiA > 0) { text(HOT, s, x, y, font, COL.hot, hiA * a, 'center'); line(AMB, [[x - tw(s, font) / 2, y + 9], [x + tw(s, font) / 2, y + 9]], COL.amber, hiA * a, 3); }
+    out.push({ s, x, y });
+  });
+  return out;
+}
+function headLabels(a, amberSet, flashAt) {
+  for (let k = 0; k < NH; k++) {
+    const s = 'H' + (k + 1), y = rowY(k) + 9;
+    if (amberSet && amberSet.has(k)) text(AMB, s, 72, y, F.mono(26, 700), COL.amber, a);
+    else text(UI, s, 72, y, F.mono(26, 500), COL.ui, .8 * a);
+    if (flashAt && flashAt[k] > 0) text(HOT, s, 72, y, F.mono(26, 700), COL.hot, flashAt[k] * a);
+  }
+}
+function stems(L, xs, ys, base, a, w = 2.2) {         // a channel of samples drawn as stems from its baseline
+  for (let i = 0; i < xs.length; i++) line(L, [[xs[i], base[i]], [xs[i], ys[i]]], COL.beam, a, w);
+}
+
+// ───────────────────────── the formula: Concat(head₁ … head₁₂) Wᴼ ─────────────────────────
+const FS = 60;
+let FORM = null;
+function layoutFormula() {
+  const P = [['Concat', F.serif(FS), 0], ['(', F.serif(FS), 0], ['head', F.ital(FS), 0], ['1', F.serif(FS * .6), FS * .22], [' … ', F.serif(FS), 0],
+    ['head', F.ital(FS), 0], ['12', F.serif(FS * .6), FS * .22], [')', F.serif(FS), 0], [' W', F.ital(FS), 0], ['O', F.serif(FS * .6), -FS * .42]];
+  let x = 0; const out = [];
+  for (const [s, f, dy] of P) { const w = tw(s, f) + (s === '12' || s === '1' ? 4 : 0); out.push({ s, f, dy, x, w }); x += w; }
+  return { parts: out, w: x };
+}
+function drawFormula(t, p, a, x0 = 72, y0 = 262) {
+  if (a <= 0 || p <= 0) return;
+  UI.save(); UI.beginPath(); UI.rect(x0 - 6, y0 - FS * 1.3, FORM.w * p + 10, FS * 1.8); UI.clip();
+  for (const e of FORM.parts) text(UI, e.s, x0 + e.x, y0 + e.dy, e.f, COL.ui, a);
+  UI.restore();
+  if (p < 1) dot(HOT, x0 + FORM.w * p, y0 - FS * .35 + Math.sin(t * 80) * 10, 5, COL.hot, a);
+}
+
+// ───────────────────────── HUD: readouts, channel row, subtitles ─────────────────────────
+function rows(list) {   // [[key, value, color, flash, alpha]] → aligned "key = value" lines under the formula
+  list.forEach(([k, v, c, f, a], i) => {
+    const y = 346 + i * 48, s = `${k.padEnd(7)} = ${v}`;
+    if (c === 'amber') text(AMB, s, 72, y, F.mono(36), COL.amber, a ?? 1); else text(UI, s, 72, y, F.mono(36), COL.ui, a ?? 1);
+    if (f > 0) text(HOT, s, 72, y, F.mono(36), COL.hot, f * .8);
+  });
+}
+function chanRow(t, a, nch, pts, status) {
+  if (a <= 0) return;
+  const y = 1340;
+  text(UI, `CH ${nch}`, 72, y, F.mono(28), COL.ui, .75 * a);
+  text(UI, `${pts} PTS/CH`, 250, y, F.mono(28), COL.ui, .75 * a);
+  if (status) {
+    dot(HOT, 846, y - 10, 8, COL.hot, a * (.55 + .45 * (Math.sin(t * 9) > 0)));
+    text(UI, status, 864, y, F.mono(28, 700), COL.ui, a);
+  }
+}
+function wrap(s, font, maxw) { const out = []; let cur = ''; for (const w of s.split(' ')) { const n = cur ? cur + ' ' + w : w; if (tw(n, font) > maxw && cur) { out.push(cur); cur = w; } else cur = n; } if (cur) out.push(cur); return out; }
+function subtitle(s, a, px = 48) {
+  if (!s || a <= 0) return;
+  const f = F.serif(px), L = wrap(s, f, 820), y0 = 1428, lh = px * 1.25;
+  line(UI, [[74, y0 - px * .83], [74, y0 + (L.length - 1) * lh + 12]], COL.ui, .8 * a, 3);
+  L.forEach((l, i) => text(UI, l, 98, y0 + i * lh, f, COL.ui, a));
+}
+function cueAt(t) { for (const c of TL.cues) if (t >= c.t0 && t < c.t1) return [c, clamp(Math.min((t - c.t0) / .16, (c.t1 - t) / .16))]; return [null, 0]; }
+
+// ───────────────────────── shot 1: the hook, two counts that come out equal ─────────────────────────
+function hook(t, a) {
+  const M = TL.marks; if (a <= 0) return;
+  const x = FILM.xIt, P = DATA.attParams;
+  const panel = (t0, y, label, n, cnt0, cnt1) => {
+    const p = seg(t, t0, t0 + .45); if (p <= 0) return;
+    written(t, t0, t0 + .35, label, 110, y, F.mono(36, 600), COL.ui, a);
+    const bx0 = 110, bx1 = 970, by0 = y + 34, by1 = y + 124, gap = n > 1 ? 10 : 0, bw = (bx1 - bx0 - gap * (n - 1)) / n;
+    for (let k = 0; k < n; k++) {
+      const x0 = bx0 + k * (bw + gap), x1 = x0 + bw, show = seg(t, t0 + .1 + k * .03, t0 + .3 + k * .03);
+      rect(UI, x0, by0, x1, by1, COL.ui, .55 * a * show);
+      const per = 384 / n, xs = [], ys = [], base = [];       // each box holds its own slice of the 384 real numbers
+      for (let i = 0; i < per; i += n > 1 ? 1 : 2) { const v = x[k * per + i]; xs.push(lerp(x0 + 4, x1 - 4, i / (per - 1))); base.push((by0 + by1) / 2); ys.push((by0 + by1) / 2 - clamp(v, -2, 2) * 20); }
+      stems(BEAM, xs, ys, base, .6 * a * show, n > 1 ? 1.6 : 1.4);
+    }
+    const c = eo(seg(t, cnt0, cnt1)) * P, s = fmtN(c);
+    text(UI, s, 110, y + 214, F.mono(66, 700), COL.ui, a * (c > 0 ? 1 : 0));
+    text(UI, 'weights', 110 + tw(s, F.mono(66, 700)) + 22, y + 214, F.mono(34), COL.ui, .8 * a * (c > 0 ? 1 : 0));
+    const lk = flash(t, M.equal, .6); if (lk > 0) text(HOT, s, 110, y + 214, F.mono(66, 700), COL.hot, lk * a);
+  };
+  panel(M.hookA, 600, '1 HEAD  · 384 wide', 1, M.hookA + .3, M.hookA + 1.4);
+  panel(M.hookB, 940, '12 HEADS · 32 wide each', 12, M.hookB + .5, M.equal);
+  const e = seg(t, M.equal, M.equal + .25);                    // amber bracket and "=" join the two counts
+  if (e > 0) {
+    const xr = 940, ya = 786, yb = 1126;
+    line(AMB, [[xr - 30, ya], [xr, ya], [xr, yb], [xr - 30, yb]], COL.amber, a * e, 4);
+    text(AMB, '=', xr + 22, (ya + yb) / 2 + 22, F.mono(72, 700), COL.amber, a * e);
+  }
+  TEXTSET.push({ id: 'hook', text: '1 HEAD / 12 HEADS', x0: 110, y0: 560, x1: 970, y1: 1160 });
+}
+
+// ───────────────────────── shot 2: 384 numbers on one channel, cut into 12 channels of 32 ─────────────────────────
+function vectorShot(t, a) {
+  const M = TL.marks; if (a <= 0) return;
+  const x = FILM.xIt, p = seg(t, M.vec0, M.vec1), u0 = M.drop0;
+  if (t < u0) {                                         // one channel, traced by the beam
+    const n = Math.floor(384 * p), xs = [], ys = [], base = [];
+    for (let i = 0; i < n; i++) { xs.push(vecX(i)); ys.push(VEC_Y - clamp(x[i], -2.2, 2.2) * VEC_K); base.push(VEC_Y); }
+    line(UI, [[GX0 - 20, VEC_Y], [GX1 + 20, VEC_Y]], COL.ui, .4 * a, 1.4);
+    stems(BEAM, xs, ys, base, .85 * a, 1.7);
+    if (p > 0 && p < 1) dot(HOT, vecX(n), VEC_Y - clamp(x[Math.min(n, 383)], -2.2, 2.2) * VEC_K, 6, COL.hot, a);
+    text(UI, '"it" · 384 numbers', GX0 - 70, 640, F.mono(30), COL.ui, .85 * a * seg(t, M.vec0, M.vec0 + .3));
+    // 11 amber cursors cut it into 12 slices of 32
+    for (let k = 1; k < 12; k++) {
+      const tk = lerp(M.cut0, M.cut1, (k - 1) / 10), c = seg(t, tk, tk + .12);
+      if (c <= 0) continue;
+      const xc = (vecX(32 * k - 1) + vecX(32 * k)) / 2;
+      line(AMB, [[xc, lerp(VEC_Y, 690, c)], [xc, lerp(VEC_Y, 1070, c)]], COL.amber, .9 * a, 2.6);
+      if (flash(t, tk, .25) > 0) dot(HOT, xc, VEC_Y, 6, COL.hot, flash(t, tk, .25) * a);
+    }
+    if (t >= M.cut1) for (let k = 0; k < 12; k++) text(AMB, String(k + 1), (vecX(32 * k) + vecX(32 * k + 31)) / 2, 1110, F.mono(24, 600), COL.amber, .9 * a * seg(t, M.cut1, M.cut1 + .2), 'center');
+    TEXTSET.push({ id: 'vec', text: '"it" · 384 numbers', x0: GX0 - 70, y0: 612, x1: GX0 + 300, y1: 650 });
+    return;
+  }
+  // the slices fall into 12 thin channels, each stretched across the screen
+  for (let k = 0; k < 12; k++) {
+    const u = eio(seg(t, M.drop0 + k * .045, M.drop1 - (11 - k) * .02)), xs = [], ys = [], base = [];
+    for (let j = 0; j < 32; j++) {
+      const i = 32 * k + j, xx = lerp(vecX(i), lerp(GX0, GX1, j / 31), u), by = lerp(VEC_Y, rowY(k), u), kk = lerp(VEC_K, STRIP_K, u);
+      xs.push(xx); base.push(by); ys.push(by - clamp(x[i], -2.2, 2.2) * kk);
+    }
+    line(UI, [[lerp(vecX(32 * k), GX0 - 10, u), lerp(VEC_Y, rowY(k), u)], [lerp(vecX(32 * k + 31), GX1 + 10, u), lerp(VEC_Y, rowY(k), u)]], COL.ui, .3 * a * u, 1.2);
+    stems(BEAM, xs, ys, base, .85 * a, lerp(1.7, 2.4, u));
+    if (u >= 1) for (const [s, dx] of [['q', 0], ['k', 1], ['v', 2]]) {          // every slice gets its own q, k, v
+      const f = seg(t, M.qkv + k * .05 + dx * .25, M.qkv + k * .05 + dx * .25 + .15);
+      if (f > 0) text(UI, s, 975 + dx * 14, rowY(k) + 7, F.ital(26), COL.ui, .9 * a * f);
+      const fl = flash(t, M.qkv + k * .05 + dx * .25, .3); if (fl > 0) text(HOT, s, 975 + dx * 14, rowY(k) + 7, F.ital(26), COL.hot, fl * a);
+    }
+  }
+  headLabels(a * seg(t, M.drop1 - .3, M.drop1), null, null);
+}
+
+// ───────────────────────── shot 3: the same W_Q, just sliced ─────────────────────────
+function matrixShot(t, a) {
+  const M = TL.marks; if (a <= 0) return;
+  const S = 600, x0 = 240, y0 = 606, rev = seg(t, M.mat0, M.mat0 + .7), cut = seg(t, M.slice - .1, M.slice + .45), sep = eio(seg(t, M.slice + .35, M.slice + .9));
+  text(UI, 'W', x0, y0 - 34, F.ital(40), COL.ui, .9 * a); text(UI, 'Q', x0 + 30, y0 - 26, F.serif(26), COL.ui, .9 * a);
+  text(UI, '384 × 384 · last layer · real weights', x0 + 62, y0 - 34, F.mono(26), COL.ui, .8 * a);
+  BEAM.save(); BEAM.imageSmoothingEnabled = false; BEAM.globalAlpha = .9 * a;
+  for (let k = 0; k < 12; k++) {                      // 12 bands of 8 thumbnail columns (= 32 output dims each)
+    const dx = (k - 5.5) * 7 * sep, bx = x0 + k * S / 12 + dx;
+    BEAM.save(); BEAM.beginPath(); BEAM.rect(bx, y0, S / 12, S * rev); BEAM.clip();
+    BEAM.drawImage(WQ, k * 8, 0, 8, 96, bx, y0, S / 12, S);
+    BEAM.restore();
+  }
+  BEAM.restore();
+  if (rev < 1) line(HOT, [[x0, y0 + S * rev], [x0 + S, y0 + S * rev]], COL.hot, .7 * a, 2);
+  for (let k = 1; k < 12; k++) {
+    const xc = x0 + k * S / 12 + (k - 6) * 7 * sep - 3.5 * sep * 0;
+    if (cut > 0) line(AMB, [[xc, y0 - 6], [xc, y0 - 6 + (S + 12) * cut]], COL.amber, .85 * a * (1 - sep * .6), 2.4);
+  }
+  const lab = seg(t, M.slice + .5, M.slice + .8);
+  for (let k = 0; k < 12; k++) text(AMB, 'H' + (k + 1), x0 + (k + .5) * S / 12 + (k - 5.5) * 7 * sep, y0 + S + 44, F.mono(20, 600), COL.amber, lab * a, 'center');
+  const ne = seg(t, M.noextra, M.noextra + .2);
+  text(AMB, '+0 weights', x0 + S / 2, y0 + S + 104, F.mono(44, 700), COL.amber, ne * a, 'center');
+  const fl = flash(t, M.noextra, .5); if (fl > 0) text(HOT, '+0 weights', x0 + S / 2, y0 + S + 104, F.mono(44, 700), COL.hot, fl * a, 'center');
+  TEXTSET.push({ id: 'mat', text: 'W_Q 384 × 384', x0, y0: y0 - 70, x1: x0 + S, y1: y0 - 20 });
+  if (ne > 0) TEXTSET.push({ id: 'noextra', text: '+0 weights', x0: x0 + S / 2 - 140, y0: y0 + S + 64, x1: x0 + S / 2 + 140, y1: y0 + S + 116 });
+}
+
+// ───────────────────────── shot 4: one head = one softmax row = one blend (illustration) ─────────────────────────
+function oneHeadShot(t, a) {
+  const M = TL.marks; if (a <= 0) return;
+  const toks = S0.tokens, T = toks.length, it = FILM.it, wi = FILM.wordIdx;
+  tokens(toks, t, a * seg(t, M.one0, M.one0 + .4), it, seg(t, M.one0 + .2, M.one0 + .5), null);
+  text(UI, '1 HEAD · one softmax row for "it"', GX0 - 70, 640, F.mono(28), COL.ui, .85 * a * seg(t, M.one0, M.one0 + .3));
+  text(UI, '(illustration)', GX0 - 70 + tw('1 HEAD · one softmax row for "it" ', F.mono(28)), 640, F.mono(28), COL.ui, .5 * a * seg(t, M.one0, M.one0 + .3));
+  // the row: weight split three ways (an illustration; the real heads come next)
+  const g = eo(seg(t, M.softmax, M.softmax + .5)), base = 1160;
+  line(UI, [[GX0 - 20, base], [GX1 + 20, base]], COL.ui, .4 * a * seg(t, M.one0, M.one0 + .3), 1.4);
+  for (let j = 0; j < T; j++) {
+    const w = wi.includes(j) ? 1 / 3 : 0, x = colX(j, T);
+    if (w > 0) {
+      const y = base - w * 600 * g;
+      line(BEAM, [[x, base], [x, y]], COL.beam, a, 4); dot(BEAM, x, y, 7, COL.beam, a * g); dot(HOT, x, y, 3.5, COL.hot, a * g);
+      text(UI, '1/3', x, y - 18, F.mono(26, 600), COL.ui, a * seg(t, M.softmax + .4, M.softmax + .6), 'center');
+    } else dot(BEAM, x, base, 3, COL.beam, .5 * a * g);
+  }
+  const bu = seg(t, M.budget, M.budget + .25);
+  text(AMB, 'Σ = 1', 990, 1030, F.mono(40, 700), COL.amber, bu * a, 'right');
+  // the three value vectors (real, last layer) melt into one blend
+  const sh = seg(t, M.budget - .3, M.budget + .2), mv = eio(seg(t, M.blend, M.blend + .9));
+  const ys = [700, 780, 860], yb = 780;
+  FILM.words.forEach((wd, n) => {
+    const v = FILM.values[n], y = lerp(ys[n], yb, mv), pts = [];
+    for (let i = 0; i < 384; i += 2) pts.push([lerp(196, GX1, i / 383), y - clamp(lerp(v[i], FILM.blend[i], mv), -3, 3) * 9]);
+    line(BEAM, pts, COL.beam, .8 * a * sh * (n === 0 ? 1 : 1 - mv * .6), 1.6);
+    text(UI, 'v(' + wd + ')', GX0 - 100, ys[n] + 8, F.mono(22), COL.ui, .8 * a * sh * (1 - seg(t, M.blend, M.blend + .2)), 'left');
+  });
+  if (mv > 0) {
+    text(HOT, 'blend', GX0 - 98, yb + 8, F.mono(26, 700), COL.hot, a * mv, 'left');
+    TEXTSET.push({ id: 'blend', text: 'blend', x0: GX0 - 98, y0: yb - 20, x1: GX0 - 20, y1: yb + 14, pass: true });
+  }
+  TEXTSET.push({ id: 'one', text: '1 HEAD · one softmax row for "it"', x0: GX0 - 70, y0: 612, x1: GX0 + 520, y1: 650 });
+}
+
+// ───────────────────────── shots 5–6: the real 12 heads, melt, apart ─────────────────────────
+const HL = [[3, 'h4'], [8, 'h9'], [11, 'h12']];         // head index, mark: the three heads named in the voice
+function twelveShot(t, a) {
+  const M = TL.marks; if (a <= 0) return;
+  const toks = S0.tokens, T = toks.length, it = FILM.it, rows12 = FILM.rows, L = DATA.layers - 1;
+  const hiHeads = new Set(HL.filter(([k, m]) => t >= M[m]).map(([k]) => k));
+  const hiTok = new Set(HL.filter(([k, m]) => t >= M[m]).map(([k]) => FILM.top[k][1]));
+  const melt = eio(seg(t, M.melt0, M.melt1)), apart = t < M.apart0 ? 0 : bo(seg(t, M.apart0, M.apart1)), m = melt * (1 - apart);
+  const dim = (1 - .85 * ss(seg(t, M.verdict, M.verdict + .5))) * (1 - .75 * ss(seg(t, M.title - .2, M.title + .4)));
+  tokens(toks, t, a * dim, it, (1 - m * .5), m < .5 ? hiTok : null);
+  const fl = Array.from({ length: NH }, (_, k) => flash(t, M.side + k * .04, .3));
+  headLabels(a * dim * (1 - m) * seg(t, M.it - .25, M.it + .2), m < .5 ? hiHeads : null, fl);
+  const yMid = 870, mean = Array.from({ length: T }, (_, j) => rows12.reduce((s, r) => s + r[j], 0) / NH);
+  for (let k = 0; k < NH; k++) {
+    const appear = seg(t, M.it - .2 + k * .05, M.it + .1 + k * .05), y = lerp(rowY(k), yMid, m), al = a * dim * appear * (1 - m * .85);
+    for (let j = 0; j < T; j++) {
+      const w = rows12[k][j], x = colX(j, T), special = j === 0 || j === T - 1;
+      dot(BEAM, x, y, radius(w), COL.beam, al * (.25 + .75 * Math.sqrt(w)) * (special ? .55 : 1));
+      if (w > .3 && !special) dot(HOT, x, y, radius(w) * .45, COL.hot, al * .7);
+    }
+    if (fl[k] > 0) line(HOT, [[GX0 - 20, y], [GX1 + 20, y]], COL.hot, fl[k] * .35 * a, 1.2);
+  }
+  // the named heads: amber ring on the cell, the weight beside it
+  for (const [k, mk_] of HL) {
+    const h = seg(t, M[mk_], M[mk_] + .2) * (1 - ss(m * 1.8)) * dim * (1 - seg(t, M.verdict, M.verdict + .4)); if (h <= 0) continue;
+    const j = FILM.top[k][1], w = FILM.top[k][2], x = colX(j, T), y = lerp(rowY(k), yMid, m);
+    ring(AMB, x, y, radius(w) + 8, COL.amber, a * h, 3);
+    text(AMB, w.toFixed(2), x + radius(w) + 16, y + 10, F.mono(28, 700), COL.amber, a * h);
+    const f = flash(t, M[mk_], .5); if (f > 0) ring(HOT, x, y, radius(w) + 8, COL.hot, f * a, 3);
+    TEXTSET.push({ id: 'w' + k, text: w.toFixed(2), x0: x + radius(w) + 16, y0: y - 16, x1: x + radius(w) + 90, y1: y + 14, pass: true });
+  }
+  // the melt: one average row
+  if (m > 0) {
+    for (let j = 0; j < T; j++) dot(BEAM, colX(j, T), yMid, radius(mean[j]), COL.beam, a * m * (.25 + .75 * Math.sqrt(mean[j])));
+    text(UI, 'one average', GX1 + 20, yMid - 56, F.mono(30, 600), COL.ui, a * ss((m - .75) / .25), 'right');
+  }
+  TEXTSET.push({ id: 'grid', text: 'H1..H12', x0: 72, y0: 560, x1: 120, y1: 1170, pass: true });
+}
+
+// ───────────────────────── the film: render(t) ─────────────────────────
+let TL = null, TEXTSET = [];
+function render(t) {
+  const M = TL.marks;
+  clearLayers(); TEXTSET = [];
+  const tag = '@complex2vec · EP 02'; text(UI, tag, 72, 176, F.mono(26, 600), COL.ui, .5); TEXTSET.push({ id: 'tag', text: tag, x0: 72, y0: 150, x1: 72 + tw(tag, F.mono(26, 600)), y1: 182, pass: true });
+
+  // power-on: dot → line → graticule
+  const pw = seg(t, M.power, M.power + .32);
+  if (pw < .3) dot(HOT, G.cx, G.cy, 6, COL.hot, pw / .3);
+  else if (pw < .62) line(HOT, [[lerp(G.cx, G.x0, (pw - .3) / .32), G.cy], [lerp(G.cx, G.x1, (pw - .3) / .32), G.cy]], COL.hot, 1, 2.5);
+  const dimEnd = 1 - .88 * ss(seg(t, M.title, M.title + .6));
+  graticule(ss((pw - .5) / .5) * dimEnd);
+
+  // formula (after the question)
+  drawFormula(t, seg(t, M.why, M.why + .9), 1);
+  if (t >= M.why) TEXTSET.push({ id: 'formula', text: 'Concat(head1 … head12) W^O', x0: 72, y0: 262 - FS, x1: 72 + FORM.w, y1: 262 + FS * .3 });
+
+  // shots, cross-faded
+  hook(t, (1 - .7 * seg(t, M.why, M.why + .5)) * (1 - seg(t, M.vec0 - .5, M.vec0 - .1)));   // dims under the question, gone when the vector arrives
+  vectorShot(t, t < M.vec0 - .1 ? 0 : 1 - seg(t, M.mat0 - .15, M.mat0 + .25));
+  matrixShot(t, t < M.mat0 ? 0 : 1 - seg(t, M.one0 - .5, M.one0 - .1));
+  oneHeadShot(t, t < M.one0 ? 0 : 1 - seg(t, M.it - .4, M.it - .05));
+  twelveShot(t, t < M.it - .25 ? 0 : 1);
+
+  // readouts
+  let R = [];
+  const P = fmtN(DATA.attParams);
+  if (t >= M.why && t < M.one0 - .1) {
+    const cut = t >= M.cut1;
+    R = [['d', '384', '', 0], ['heads', cut ? '12' : '1', '', flash(t, M.cut1, .5)], ['d_head', cut ? '32' : '384', '', flash(t, M.cut1, .5)],
+      ['weights', P, t >= M.noextra ? 'amber' : '', flash(t, M.why + .2, .5) + flash(t, M.noextra, .6)]];
+  } else if (t >= M.one0 - .1 && t < M.it - .25) {
+    R = [['heads', '1', '', 0], ['word', '"it"', '', 0]];
+    if (t >= M.budget) R.push(['Σ row', '1.00', 'amber', flash(t, M.budget, .5)]);
+  } else if (t >= M.it - .25 && t < M.verdict) {
+    const m = eio(seg(t, M.melt0, M.melt1)) * (1 - (t < M.apart0 ? 0 : seg(t, M.apart0, M.apart1)));
+    R = [['layer', `${DATA.layers} / ${DATA.layers}`, '', flash(t, M.layer, .5)], ['word', '"it"', '', flash(t, M.it, .5)], ['heads', m > .5 ? '1 (melted)' : '12', '', flash(t, M.apart1, .5)]];
+  } else if (t >= M.verdict) {
+    const va = 1 - ss(seg(t, M.title, M.title + .5));
+    R = [['weights', P, 'amber', flash(t, M.verdict, .5), va], ['lookups', t >= M.lookups ? '12 per word' : '1 per word', 'amber', flash(t, M.lookups, .5), va]];
+  }
+  if (R.length) rows(R);
+  TEXTSET.push({ id: 'readouts', text: R.map(r => r[0]).join('|'), x0: 72, y0: 310, x1: 700, y1: 520, pass: true });
+
+  // channel row under the graticule
+  const nch = t < M.drop0 ? 1 : t < M.one0 ? 12 : t < M.it ? 1 : (eio(seg(t, M.melt0, M.melt1)) * (1 - (t < M.apart0 ? 0 : seg(t, M.apart0, M.apart1))) > .5 ? 1 : 12);
+  const pts = t < M.it - .25 ? (nch === 1 && t < M.drop0 ? 384 : 32) : S0.T;
+  const showRow = t >= M.vec0 - .2 && !(t >= M.mat0 && t < M.one0);
+  chanRow(t, (showRow ? 1 : 0) * (1 - seg(t, M.verdict, M.verdict + .4)), nch, pts, 'RUN');
+
+  // verdict and ending
+  const va = seg(t, M.verdict, M.verdict + .3) * (1 - ss(seg(t, M.title, M.title + .5)));
+  if (va > 0) {
+    text(AMB, 'extra weights', 96, 680, F.mono(34), COL.amber, va * .85);
+    text(AMB, '0', 96, 800, F.mono(130, 700), COL.amber, va);
+    const lk = seg(t, M.lookups - .1, M.lookups + .15) * va;
+    text(AMB, 'lookups per word', 560, 680, F.mono(34), COL.amber, lk * .85);
+    text(AMB, '×12', 560, 800, F.mono(130, 700), COL.amber, lk);
+    const f1 = flash(t, M.verdict + .1, .5), f2 = flash(t, M.lookups, .5);
+    if (f1 > 0) text(HOT, '0', 96, 800, F.mono(130, 700), COL.hot, f1 * .7);
+    if (f2 > 0) text(HOT, '×12', 560, 800, F.mono(130, 700), COL.hot, f2 * .7);
+    TEXTSET.push({ id: 'verdict', text: 'extra weights 0 / lookups ×12', x0: 96, y0: 650, x1: 900, y1: 810 });
+  }
+  if (t >= M.title) {
+    const l1 = 'Multi-head', l2 = 'attention';
+    written(t, M.title, M.title + .7, l1, 96, 720, F.ital(104), COL.ui);
+    written(t, M.title + .6, M.title + 1.3, l2, 96, 822, F.serif(78), COL.ui);
+    TEXTSET.push({ id: 'title', text: l1 + ' ' + l2, x0: 96, y0: 630, x1: 96 + tw(l1, F.ital(104)), y1: 840 });
+    const cta = 'Play with it yourself → link in bio';
+    if (t >= M.title + 2.0) {
+      written(t, M.title + 2.0, M.title + 2.9, cta, 96, 930, F.mono(34, 600), COL.ui, 1, UI);
+      TEXTSET.push({ id: 'cta', text: cta, x0: 96, y0: 895, x1: 96 + tw(cta, F.mono(34, 600)), y1: 942 });
+    }
+  }
+  const [cue, ca] = cueAt(t); if (cue) subtitle(cue.text, ca);
+  compose();
+}
+
+// ───────────────────────── sound and cue events (exported by events.mjs) ─────────────────────────
+function events() {
+  const M = TL.marks, E = [];
+  const ev = (t, type, o = {}) => E.push({ t: +t.toFixed(3), type, ...o });
+  const ticks = (s, t0, t1, f, v = .5) => { const w = tw(s, f); let x = 0; for (const ch of s) { if (ch !== ' ') ev(t0 + (t1 - t0) * x / w, 'tick', { v }); x += tw(ch, f); } };
+  ev(M.power, 'relay');
+  ticks('1 HEAD  · 384 wide', M.hookA, M.hookA + .35, F.mono(36, 600), .4);
+  ticks('12 HEADS · 32 wide each', M.hookB, M.hookB + .35, F.mono(36, 600), .4);
+  for (let u = 0; u < 1; u += 1 / 14) { ev(lerp(M.hookA + .3, M.hookA + 1.4, Math.cbrt(u)), 'count', { v: .5 }); ev(lerp(M.hookB + .5, M.equal, Math.cbrt(u)), 'count', { v: .5 }); }
+  ev(M.equal, 'lock');
+  ev(M.why, 'sweep', { d: .8, up: 1 }); ev(M.why, 'music_on');
+  for (const e of FORM.parts) ev(M.why + .9 * (e.x / FORM.w), 'tick', { v: .5 });
+  ev(M.vec0, 'buzz', { d: M.vec1 - M.vec0 });
+  for (let k = 1; k < 12; k++) ev(lerp(M.cut0, M.cut1, (k - 1) / 10), 'cursor', { f: 2000 + 80 * k });
+  for (let k = 0; k < 12; k++) ev(M.drop0 + k * .045 + .5, 'drop', { v: .8, p: (k - 5.5) / 8 });
+  ev(M.drop1, 'relay');
+  for (let k = 0; k < 12; k++) for (let dx = 0; dx < 3; dx++) if (k % 3 === 0) ev(M.qkv + k * .05 + dx * .25, 'blip', { f: [1800, 2200, 2600][dx], v: .35 });
+  ev(M.mat0, 'scan', { d: .7 });
+  for (let k = 1; k < 12; k++) ev(M.slice - .1 + .55 * (k / 12), 'tick', { v: .7 });
+  ev(M.slice + .35, 'whoosh', { d: .55 });
+  ev(M.noextra, 'readout');
+  ev(M.one0, 'click');
+  ev(M.softmax, 'blip', { f: 2400, v: .6 }); ev(M.softmax + .15, 'blip', { f: 2400, v: .6 }); ev(M.softmax + .3, 'blip', { f: 2400, v: .6 });
+  ev(M.budget, 'readout');
+  ev(M.blend, 'whoosh', { d: .9 });
+  ev(M.it, 'ping', { m: 81 }); for (let k = 0; k < 12; k++) ev(M.it - .2 + k * .05, 'drop', { v: .5, p: 0 });
+  ev(M.layer, 'readout');
+  ev(M.h4, 'head', { m: 76 }); ev(M.h9, 'head', { m: 79 }); ev(M.h12, 'head', { m: 84 });
+  ev(M.melt0, 'sweep', { d: M.melt1 - M.melt0, up: 0 });
+  ev(M.apart0, 'whoosh', { d: M.apart1 - M.apart0 }); ev(M.apart1, 'land');
+  for (let k = 0; k < 12; k++) ev(M.side + k * .04, 'tick', { v: .6 });
+  ev(M.verdict, 'cursor', { f: 2400 }); ev(M.lookups, 'lock');
+  for (const [s, t0, t1, f] of [['Multi-head', M.title, M.title + .7, F.ital(104)], ['attention', M.title + .6, M.title + 1.3, F.serif(78)], ['Play with it yourself → link in bio', M.title + 2.0, M.title + 2.9, F.mono(34, 600)]]) ticks(s, t0, t1, f);
+  return E.sort((a, b) => a.t - b.t);
+}
+
+// ───────────────────────── the interactive lab (?lab=1) ─────────────────────────
+const LS = { si: 0, L: 11, word: null, melt: false };
+function labDraw(now) {
+  const t = now / 1000, s = DATA.sentences[LS.si], toks = s.tokens, T = s.T;
+  if (LS.word == null || LS.word >= T) LS.word = LS.si === 0 ? FILM.it : Math.min(2, T - 2);
+  const i = LS.word;
+  clearLayers();
+  text(UI, '@complex2vec · LAB', 72, 176, F.mono(26, 600), COL.ui, .5);
+  drawFormula(t, 1, 1);
+  graticule(1);
+  const R = Array.from({ length: NH }, (_, h) => Array.from({ length: T }, (_, j) => attW(LS.si, LS.L, h, i, j)));
+  const mean = Array.from({ length: T }, (_, j) => R.reduce((a, r) => a + r[j], 0) / NH);
+  const best = R.map((r, h) => { let bj = -1, bw = 0; r.forEach((w, j) => { if (j > 0 && j < T - 1 && j !== i && w > bw) { bw = w; bj = j; } }); return [h, bj, bw]; });
+  const top = [...best].sort((a, b) => b[2] - a[2]).slice(0, 3);
+  tokens(toks, t, 1, i, 1, LS.melt ? null : new Set(top.map(b => b[1])));
+  if (LS.melt) {
+    for (let j = 0; j < T; j++) dot(BEAM, colX(j, T), 870, radius(mean[j]), COL.beam, .25 + .75 * Math.sqrt(mean[j]));
+    text(UI, 'one average of the 12 heads', GX0 - 70, 800, F.mono(30, 600), COL.ui, 1);
+  } else {
+    headLabels(1, new Set(top.map(b => b[0])), null);
+    for (let h = 0; h < NH; h++) for (let j = 0; j < T; j++) {
+      const w = R[h][j], special = j === 0 || j === T - 1;
+      dot(BEAM, colX(j, T), rowY(h), radius(w), COL.beam, (.25 + .75 * Math.sqrt(w)) * (special ? .55 : 1));
+      if (w > .3 && !special) dot(HOT, colX(j, T), rowY(h), radius(w) * .45, COL.hot, .7);
+    }
+    for (const [h, j, w] of top) {
+      const x = colX(j, T), y = rowY(h);
+      ring(AMB, x, y, radius(w) + 8, COL.amber, 1, 3); text(AMB, w.toFixed(2), x + radius(w) + 16, y + 10, F.mono(28, 700), COL.amber, 1);
+    }
+  }
+  const sink = R.filter(r => r[0] + r[T - 1] > .5).length;
+  rows([['layer', `${LS.L + 1} / ${DATA.layers}`, '', 0], ['word', `"${toks[i]}"`, '', 0], ['heads', LS.melt ? '1 (melted)' : '12', '', 0]]);
+  chanRow(t, 1, LS.melt ? 1 : 12, T, 'LIVE');
+  const msg = LS.melt
+    ? `One average: the 12 lookups blur together. Untick to pull them apart.`
+    : `Into "${toks[i]}": ` + top.map(([h, j, w]) => `H${h + 1}→${toks[j]} ${w.toFixed(2)}`).join(', ') + `. ${sink}/12 heads mostly rest on <s>, </s>.`;
+  subtitle(msg, 1, 40);
+  compose();
+}
+function labFrame(now) { labDraw(now); requestAnimationFrame(labFrame); }
+function startLab() {
+  document.body.classList.add('lab'); const ui = document.getElementById('ui'); ui.hidden = false;
+  const sIn = document.getElementById('sIn'), lIn = document.getElementById('lIn'), lOut = document.getElementById('lOut'), mIn = document.getElementById('mIn');
+  sIn.innerHTML = DATA.sentences.map((s, k) => `<option value="${k}">${s.text}</option>`).join('');
+  if (QS.has('s')) sIn.value = String(clamp(+QS.get('s') | 0, 0, DATA.sentences.length - 1));
+  if (QS.has('l')) lIn.value = String(clamp(+QS.get('l') | 0, 1, 12));
+  if (QS.get('m') === '1') mIn.checked = true;
+  const upd = () => { const si = +sIn.value; if (si !== LS.si) LS.word = null; LS.si = si; LS.L = +lIn.value - 1; lOut.textContent = lIn.value; LS.melt = mIn.checked; };
+  sIn.onchange = upd; lIn.oninput = upd; mIn.onchange = upd; upd();
+  if (QS.has('w')) LS.word = +QS.get('w') | 0;
+  const cv = document.getElementById('c');
+  cv.addEventListener('pointerdown', e => {                 // tap anywhere in a token's column to pick that word
+    const r = cv.getBoundingClientRect(), sx = (e.clientX - r.left) * W / r.width, sy = (e.clientY - r.top) * H / r.height;
+    if (sy < G.y0 || sy > G.y1) return;
+    const T = DATA.sentences[LS.si].T, j = Math.round((sx - GX0) / ((GX1 - GX0) / (T - 1)));
+    if (j >= 0 && j < T) LS.word = j;
+  });
+  window.render = t => labDraw(4000 + t * 1000); window.DUR = 10; window.READY = true;
+  if (!navigator.webdriver) requestAnimationFrame(labFrame);
+}
+
+// ───────────────────────── boot ─────────────────────────
+// visit counts for the film page and the lab: GoatCounter (no cookies, no personal data); never loaded by the render tools
+if (!navigator.webdriver) { const g = document.createElement('script'); g.async = true; g.src = 'https://gc.zgo.at/count.js'; g.dataset.goatcounter = 'https://complex2vec.goatcounter.com/count'; document.head.appendChild(g); }
+(async function boot() {
+  await Promise.all([document.fonts.load(F.serif(60)), document.fonts.load(F.ital(60)), document.fonts.load(F.mono(32))]);
+  FORM = layoutFormula();
+  DATA = await (await fetch('data.json')).json(); decode();
+  if (LAB) { TL = { marks: {} }; startLab(); return; }
+  TL = await (await fetch('timeline.json')).json();
+  window.DUR = TL.dur; window.EV = events();
+  window.TEXTS = t => { render(t); return TEXTSET; };
+  window.render = render;
+  window.READY = true;
+  if (!navigator.webdriver && !QS.has('still')) watch();   // opened in a normal browser (the render tools use webdriver)
+})();
+
+// The web film: fitted to the screen, drawn live, each frame at the soundtrack's clock so picture and sound stay locked.
+// Browsers only start sound after a tap, so it waits on the poster frame with a play button. Tap the film to pause.
+function watch() {
+  document.body.classList.add('fit');
+  const cv = document.getElementById('c'), box = document.getElementById('play'), btn = document.getElementById('playBtn');
+  const au = new Audio('audio.m4a'); au.preload = 'auto';
+  let silent = false, t0 = 0, pos = 0, running = false;               // pos: where the silent clock was paused
+  au.addEventListener('error', () => { silent = true; });              // no soundtrack next to the page (e.g. a dev server): run on the wall clock
+  const now = () => silent ? pos + (performance.now() - t0) / 1000 : au.currentTime;
+  const frame = () => {
+    if (!running) return;
+    const t = now();
+    if (t >= TL.dur || (!silent && au.ended)) { stop('↻ Watch again'); pos = 0; render(TL.dur - .01); return; }
+    render(t); requestAnimationFrame(frame);
+  };
+  const start = () => {
+    box.hidden = true; running = true;
+    if (au.ended || au.currentTime >= TL.dur - .05) au.currentTime = 0;
+    if (silent) { t0 = performance.now(); requestAnimationFrame(frame); return; }
+    au.play().then(() => requestAnimationFrame(frame)).catch(() => { silent = true; t0 = performance.now(); requestAnimationFrame(frame); });
+  };
+  const stop = label => { if (silent) pos = now(); else au.pause(); running = false; btn.textContent = label; box.hidden = false; };
+  btn.onclick = start;
+  cv.addEventListener('click', () => running ? stop('▶ Resume') : start());
+  render(POSTER_T);                                                    // the poster frame while waiting
+  box.hidden = false; btn.focus({ preventScroll: true });
+}
+const POSTER_T = 37.4;
+</script>
+</body>
+</html>

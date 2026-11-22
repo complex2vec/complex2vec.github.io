@@ -537,6 +537,8 @@ function startLab() {
 }
 
 // ───────────────────────── boot ─────────────────────────
+// visit counts for the film page and the lab: GoatCounter (no cookies, no personal data); never loaded by the render tools
+if (!navigator.webdriver) { const g = document.createElement('script'); g.async = true; g.src = 'https://gc.zgo.at/count.js'; g.dataset.goatcounter = 'https://complex2vec.goatcounter.com/count'; document.head.appendChild(g); }
 (async function boot() {
   await Promise.all([document.fonts.load(F.serif(108)), document.fonts.load(F.ital(108)), document.fonts.load(F.mono(32))]);
   FORM = layoutFormula();

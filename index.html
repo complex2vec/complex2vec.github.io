@@ -42,6 +42,7 @@ h2 { font: 600 13px JBM; letter-spacing: .14em; text-transform: uppercase; opaci
 .btn.lab { background: var(--beam); color: var(--bg); box-shadow: 0 0 18px #4DFF8855; }
 .btn.film { border: 1px solid var(--line); color: var(--ui); }
 .btn:hover, .btn:focus-visible { filter: brightness(1.12); outline: none; box-shadow: 0 0 0 2px var(--hot); }
+.ep + .ep { margin-top: 16px; }
 .soon { text-align: center; opacity: .55; font-size: 14px; margin-top: 16px; }
 footer { margin-top: 56px; text-align: center; font-size: 12px; opacity: .5; }
 @media (max-width: 480px) { .ep { grid-template-columns: 96px 1fr; gap: 14px; } .ep img { width: 96px; } .ep h3 { font-size: 22px; } }
@@ -50,7 +51,7 @@ footer { margin-top: 56px; text-align: center; font-size: 12px; opacity: .5; }
 <body>
 <main>
   <header>
-    <img src="avatar.jpg" alt="C2V Foundry logo: a complex number drawn as a vector in the unit circle">
+    <img src="avatar.jpg" alt="C2V Foundry logo: the column vector C, 2, V inside an oscilloscope dial">
     <h1>C2V <em>Foundry</em></h1>
     <div class="handle">@complex2vec</div>
     <p class="tag">Complex ideas → vectors you can see.</p>
@@ -71,7 +72,10 @@ footer { margin-top: 56px; text-align: center; font-size: 12px; opacity: .5; }
 </main>
 <script>
 // Add an episode here when it is published: folder = epNN, lab = the starting state worth sharing
-const EPISODES = [
+const EPISODES = [                      // newest first
+  { folder: 'ep02', num: 'EP 02', title: 'Twelve heads, one price',
+    blurb: 'Multi-head attention costs zero extra weights. Pick any word in a real model and see where each of its 12 heads looks.',
+    lab: 'ep02/?lab=1&s=0&l=12&w=8' },
   { folder: 'ep01', num: 'EP 01', title: 'Why attention divides by √d',
     blurb: 'Drop the √d and softmax goes flat: the gradient shrinks 586×. Turn up d yourself and watch it happen.',
     lab: 'ep01/?lab=1&d=1024' },
@@ -87,6 +91,8 @@ document.getElementById('eps').innerHTML = EPISODES.map(e => `
     </div>
   </article>`).join('');
 document.fonts.ready.then(() => { window.DUR = 1; window.render = () => {}; window.READY = true; });   // lets the film tools screenshot this page
+// visit counts: GoatCounter (no cookies, no personal data); skipped when a render tool drives the page
+if (!navigator.webdriver) { const g = document.createElement('script'); g.async = true; g.src = 'https://gc.zgo.at/count.js'; g.dataset.goatcounter = 'https://complex2vec.goatcounter.com/count'; document.head.appendChild(g); }
 </script>
 </body>
 </html>
