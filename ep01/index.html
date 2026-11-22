@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why attention divides by √d</title>
+<style>
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText.ttf); font-weight: 400 700; }
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText-Italic.ttf); font-style: italic; font-weight: 400 700; }
+@font-face { font-family: JBM; src: url(fonts/JetBrainsMono.ttf); font-weight: 100 800; }
+html, body { margin: 0; background: #010402; overflow: hidden; }
+canvas { display: block; }
+body.lab { height: 100vh; display: flex; justify-content: center; align-items: center; }
+body.lab canvas { height: 100vh; width: auto; max-width: 100vw; object-fit: contain; touch-action: none; }
+#ui { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(92vw, 52vh); box-sizing: border-box;
+  padding: 1.4vh 2vh; border: 1px solid #8DFFB044; border-radius: 1vh; background: #010402dd;
+  font: 500 clamp(12px, 1.7vh, 18px) JBM, monospace; color: #8DFFB0; display: grid; gap: 1vh; }
+#ui[hidden] { display: none; }
+#ui label { display: flex; align-items: center; gap: 1.2vh; }
+#ui input[type=range] { flex: 1; accent-color: #4DFF88; }
+#ui input[type=checkbox] { accent-color: #FFB547; width: 2vh; height: 2vh; }
+#ui .v { min-width: 6ch; text-align: right; color: #E6FFEC; }
+#ui a { color: #8DFFB0; opacity: .7; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div id="ui" hidden>
+  <label>d <input id="dIn" type="range" min="0" max="10" step="0.01" value="6"><span class="v" id="dOut">64</span></label>
+  <label><input id="sIn" type="checkbox"> divide scores by √d</label>
+  <div>tip: drag on the screen to move the probe point · <a href="?">play the film</a></div>
+</div>
+<script>
+'use strict';
+// ───────────────────────── constants and helpers ─────────────────────────
+const W = 1080, H = 1920, QS = new URLSearchParams(location.search), LAB = QS.has('lab');
+const COL = { bg: '#010402', amb: '#0B2412', beam: '#4DFF88', ui: '#8DFFB0', hot: '#E6FFEC', amber: '#FFB547' };
+const G = { x0: 60, y0: 520, x1: 1020, y1: 1288, cx: 540, cy: 904 };          // the graticule on the glass (10 × 8 div of 96 px)
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), lerp = (a, b, u) => a + (b - a) * u;
+const seg = (t, a, b) => b > a ? clamp((t - a) / (b - a)) : (t >= a ? 1 : 0);
+const ss = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const eio = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eo = x => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const flash = (t, t0, d = .35) => t >= t0 ? clamp(1 - (t - t0) / d) : 0;
+const sig = x => 1 / (1 + Math.exp(-x)), slopeAt = x => { const a = sig(x); return a * (1 - a); };
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+const F = { mono: (px, w = 500) => `${w} ${px}px JBM`, serif: (px, w = 400) => `${w} ${px}px STIX`, ital: (px, w = 400) => `italic ${w} ${px}px STIX` };
+const sgn = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2);
+
+// ───────────────────────── canvases: four light channels + glow ─────────────────────────
+const X = document.getElementById('c').getContext('2d');
+function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+const [cBeam, BEAM] = mk(W, H), [cUi, UI] = mk(W, H), [cHot, HOT] = mk(W, H), [cAmb, AMB] = mk(W, H);
+const [cGlow, GLOW] = mk(W / 2, H / 2);
+const LEVELS = [[4, 1.2, .55], [8, 2.0, .45], [16, 2.6, .32], [32, 3.0, .22]].map(([ds, b, w]) => { const [c, x] = mk(W / ds, H / ds); return { c, x, b, w }; });
+const [cBg, BG] = mk(W, H), [cVig, VIG] = mk(W, H);
+(function screen() {
+  BG.fillStyle = COL.bg; BG.fillRect(0, 0, W, H);
+  let g = BG.createRadialGradient(540, 900, 0, 540, 900, 1250); g.addColorStop(0, 'rgba(11,36,18,.62)'); g.addColorStop(1, 'rgba(11,36,18,0)');
+  BG.fillStyle = g; BG.fillRect(0, 0, W, H);
+  g = VIG.createRadialGradient(540, 960, 520, 540, 960, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.55)');
+  VIG.fillStyle = g; VIG.fillRect(0, 0, W, H);
+})();
+function clearLayers() { for (const c of [BEAM, UI, HOT, AMB]) { c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.clearRect(0, 0, W, H); } }
+function compose() {
+  X.globalCompositeOperation = 'source-over'; X.globalAlpha = 1; X.drawImage(cBg, 0, 0);
+  GLOW.globalCompositeOperation = 'source-over'; GLOW.globalAlpha = 1; GLOW.clearRect(0, 0, W / 2, H / 2);
+  GLOW.drawImage(cBeam, 0, 0, W / 2, H / 2); GLOW.globalCompositeOperation = 'lighter';
+  GLOW.globalAlpha = 1.25; GLOW.drawImage(cHot, 0, 0, W / 2, H / 2); GLOW.globalAlpha = .9; GLOW.drawImage(cAmb, 0, 0, W / 2, H / 2);
+  GLOW.globalAlpha = .2; GLOW.drawImage(cUi, 0, 0, W / 2, H / 2); GLOW.globalAlpha = 1;
+  X.globalCompositeOperation = 'lighter';
+  for (const L of LEVELS) {
+    L.x.clearRect(0, 0, L.c.width, L.c.height); L.x.filter = `blur(${L.b}px)`; L.x.drawImage(cGlow, 0, 0, L.c.width, L.c.height); L.x.filter = 'none';
+    X.globalAlpha = L.w; X.drawImage(L.c, 0, 0, W, H);
+  }
+  X.globalAlpha = 1; X.drawImage(cBeam, 0, 0); X.drawImage(cUi, 0, 0); X.drawImage(cHot, 0, 0); X.drawImage(cAmb, 0, 0);
+  X.globalCompositeOperation = 'source-over'; X.drawImage(cVig, 0, 0);
+}
+
+// ───────────────────────── drawing primitives ─────────────────────────
+function line(c, pts, color, a, w, dash) {
+  if (pts.length < 2 || a <= 0) return;
+  c.save(); c.globalAlpha = clamp(a); c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; if (dash) c.setLineDash(dash);
+  c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.stroke(); c.restore();
+}
+function dot(c, x, y, r, color, a = 1) { if (a <= 0) return; c.save(); c.globalAlpha = clamp(a); c.fillStyle = color; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); }
+function text(c, s, x, y, font, color, a = 1, align = 'left') { if (a <= 0) return; c.save(); c.globalAlpha = clamp(a); c.font = font; c.fillStyle = color; c.textAlign = align; c.fillText(s, x, y); c.restore(); }
+function tw(s, font) { X.font = font; return X.measureText(s).width; }
+// text written by the beam: a clip sweeps left → right with a white-hot writing point, then a flash
+function written(t, t0, t1, s, x, y, font, color = COL.ui, a = 1, layer = UI) {
+  if (t < t0 || a <= 0) return 0;
+  const w = tw(s, font), p = seg(t, t0, t1), px = parseFloat(font.match(/(\d+)px/)[1]);
+  layer.save(); layer.beginPath(); layer.rect(x - 4, y - px * 1.2, w * p + 6, px * 1.6); layer.clip(); text(layer, s, x, y, font, color, a); layer.restore();
+  if (p < 1) dot(HOT, x + w * p, y - px * .32 + Math.sin(t * 90) * px * .18, 4.5, COL.hot, a);
+  const f = flash(t, t1, .4); if (f > 0) text(HOT, s, x, y, font, COL.hot, f * .8 * a);
+  return p;
+}
+
+// ───────────────────────── data: real dot products ─────────────────────────
+// Each sample i: q, k ~ N(0, 1)^DM; PRE[i*(DM+1)+d] = Σ_{j<d} q_j k_j, the score with d dimensions (prefix sums: any d at O(1)).
+const DM = LAB ? 1024 : 64, NS = LAB ? 480 : 5200;
+const PRE = new Float32Array(NS * (DM + 1)), UJ = new Float32Array(NS), Q0 = [], K0 = [];
+(function sample() {
+  const r = mulberry(20261121);
+  for (let i = 0; i < NS; i++) {
+    let s = 0; PRE[i * (DM + 1)] = 0;
+    for (let j = 0; j < DM; j++) { const q = gauss(r), k = gauss(r); if (i === 0 && j < 8) { Q0.push(q); K0.push(k); } s += q * k; PRE[i * (DM + 1) + j + 1] = s; }
+    UJ[i] = r();
+  }
+})();
+const score = (i, d) => PRE[i * (DM + 1) + d];
+
+// ───────────────────────── world camera and graticule ─────────────────────────
+const w2s = (cam, x, y) => [G.cx + (x - cam.cx) * cam.zx, G.cy - (y - cam.cy) * cam.zy];
+const s2w = (cam, sx, sy) => [cam.cx + (sx - G.cx) / cam.zx, cam.cy - (sy - G.cy) / cam.zy];
+function step5(z) { let s = Math.pow(5, Math.floor(Math.log(96 / z) / Math.log(5))); while (s * z < 96) s *= 5; while (s * z >= 480) s /= 5; return s; }
+function clipG(c) { c.save(); c.beginPath(); c.rect(G.x0, G.y0, G.x1 - G.x0, G.y1 - G.y0); c.clip(); }
+function grid(cam, a) {
+  if (a <= 0) return;
+  clipG(UI);
+  for (const ax of ['x', 'y']) {
+    const z = ax === 'x' ? cam.zx : cam.zy, c0 = ax === 'x' ? cam.cx : cam.cy, s = step5(z);
+    for (const [st, al] of [[s, .30], [s / 5, .30 * ss((s / 5 * z - 18) / 40)]]) {
+      if (al <= 0.01) continue;
+      const half = (ax === 'x' ? 480 : 384) / z, k0 = Math.floor((c0 - half) / st), k1 = Math.ceil((c0 + half) / st);
+      for (let k = k0; k <= k1; k++) {
+        const v = k * st; if (Math.abs(v) < st * 1e-6) continue;
+        const p = ax === 'x' ? w2s(cam, v, 0)[0] : w2s(cam, 0, v)[1];
+        line(UI, ax === 'x' ? [[p, G.y0], [p, G.y1]] : [[G.x0, p], [G.x1, p]], COL.ui, al * a, 1.4, [2, 7]);
+      }
+    }
+  }
+  const [ox, oy] = w2s(cam, 0, 0);
+  line(UI, [[G.x0, oy], [G.x1, oy]], COL.ui, .5 * a, 1.6); line(UI, [[ox, G.y0], [ox, G.y1]], COL.ui, .5 * a, 1.6);
+  const sx = step5(cam.zx) / 5 * cam.zx;                         // 0.2-division ticks on the axes
+  if (sx > 10) for (let x = ox % sx; x < G.x1; x += sx) if (x > G.x0) line(UI, [[x, oy - 6], [x, oy + 6]], COL.ui, .45 * a, 1.2);
+  UI.restore();
+  line(UI, [[G.x0, G.y0], [G.x1, G.y0], [G.x1, G.y1], [G.x0, G.y1], [G.x0, G.y0]], COL.ui, .42 * a, 1.6);
+}
+const fmtDiv = v => v >= 1 ? v.toFixed(0) : String(+v.toPrecision(2));
+
+// ───────────────────────── the formula softmax(QKᵀ/√d)V ─────────────────────────
+const FS = 108;   // laid out once at 108 px, drawn with a transform
+let FORM = null;
+function layoutFormula() {
+  const P = [['softmax', F.serif(FS), 0, ''], ['(', F.serif(FS), 0, ''], ['Q', F.ital(FS), 0, 'qk'], ['K', F.ital(FS), 0, 'qk'], ['T', F.serif(FS * .62), -FS * .42, 'qk'],
+    ['/', F.serif(FS), 0, 'div'], ['√', F.serif(FS), 0, 'div'], ['d', F.ital(FS), 0, 'div'], [')', F.serif(FS), 0, ''], ['V', F.ital(FS), 0, '']];
+  let x = 0; const out = [];
+  for (const [s, f, dy, g] of P) { const w = tw(s, f) + (s === 'T' ? 6 : s === 'd' ? 4 : 0); out.push({ s, f, dy, g, x, w }); x += w; }
+  const box = g => { const e = out.filter(o => o.g === g); return [e[0].x - 6, -FS * .9, e[e.length - 1].x + e[e.length - 1].w + 6, FS * .28]; };
+  return { parts: out, w: x, qk: box('qk'), div: box('div') };
+}
+function formulaXform(t) {           // screen transform of the formula: centred and large, then flown to the HUD
+  const M = TL.marks, u = eio(seg(t, M.morph + .2, M.morph + 1.0));
+  const k0 = 1, x0 = (W - FORM.w) / 2, y0 = 860, k1 = 60 / FS, x1 = 72, y1 = 262;
+  return { k: lerp(k0, k1, u), x: lerp(x0, x1, u), y: lerp(y0, y1, u) };
+}
+function drawFormula(t, o) {         // o: {p write progress, qk alpha, div state 0 struck … 1 lit, divFlash, strike alpha, all alpha}
+  const T = o.xf, a = o.a ?? 1;
+  for (const L of [UI, HOT, AMB]) { L.save(); L.translate(T.x, T.y); L.scale(T.k, T.k); }
+  UI.beginPath(); UI.rect(-10, -FS * 1.3, FORM.w * o.p + 12, FS * 1.8); UI.clip();
+  for (const e of FORM.parts) {
+    let al = a; if (e.g === 'qk') al *= o.qk; if (e.g === 'div') al *= lerp(.32, 1, o.div);
+    text(UI, e.s, e.x, e.dy, e.f, COL.ui, al);
+    if (e.g === 'div' && o.divFlash > 0) text(HOT, e.s, e.x, e.dy, e.f, COL.hot, o.divFlash * a);
+    if (e.s === '√') { const d = FORM.parts.find(q => q.s === 'd'); line(UI, [[e.x + e.w * .82, -FS * .78], [d.x + d.w, -FS * .78]], COL.ui, al, 4.5); }
+  }
+  if (o.p < 1) dot(HOT, FORM.w * o.p, -FS * .35 + Math.sin(t * 80) * 18, 6, COL.hot);
+  const fl = flash(t, TL.marks.write1, .4) * (o.p >= 1 ? 1 : 0); if (fl > 0) for (const e of FORM.parts) text(HOT, e.s, e.x, e.dy, e.f, COL.hot, fl * .7);
+  if (o.strike > 0) {                // amber: the box and the strike through "/√d"
+    const [x0, y0, x1, y1] = FORM.div, sp = o.strikeP ?? 1;
+    line(AMB, [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], COL.amber, o.strike * .9, 3.5);
+    line(AMB, [[x0 + 6, y1 - 6], [lerp(x0 + 6, x1 - 6, sp), lerp(y1 - 6, y0 + 6, sp)]], COL.amber, o.strike, 6);
+  }
+  for (const L of [UI, HOT, AMB]) L.restore();
+}
+// glyph light of Q, K, T sampled once, for "text into geometry"
+let PARTS = [];
+function sampleGlyphs() {
+  const [c, x] = mk(Math.ceil(FORM.w) + 40, FS * 2);
+  x.fillStyle = '#fff'; for (const e of FORM.parts) if (e.g === 'qk') { x.font = e.f; x.fillText(e.s, e.x + 20, FS * 1.3 + e.dy); }
+  const d = x.getImageData(0, 0, c.width, c.height).data, pts = [];
+  for (let y = 0; y < c.height; y += 3) for (let xx = 0; xx < c.width; xx += 3) if (d[(y * c.width + xx) * 4] > 128) pts.push([xx - 20, y - FS * 1.3]);
+  const r = mulberry(77), kx = FORM.parts.find(e => e.s === 'K').x, out = [];
+  for (let i = 0; i < 320; i++) {
+    const p = pts[Math.floor(r() * pts.length)], ch = p[0] < kx ? 0 : 1, st = Math.floor(r() * 8);
+    out.push({ sx: p[0], sy: p[1], ch, st, f: r(), delay: r() * .22, bend: (r() - .5) * 160 });
+  }
+  PARTS = out;
+}
+
+// ───────────────────────── shot 2: the dot product as two sampled signals ─────────────────────────
+const BAND = { q: 690, k: 915, p: 1150 }, U = 60, STX = i => 60 + 96 * (1.5 + i), SUMX = 980;
+function stem(L, x, yc, v, a, w = 3.2, hot = 0) {
+  const y = yc - clamp(v, -1.7, 1.7) * U;
+  line(L, [[x, yc], [x, y]], COL.beam, a, w); dot(L, x, y, 5.5, COL.beam, a); dot(HOT, x, y, 3, COL.hot, a * (.45 + .55 * hot));
+}
+function dotProduct(t, a) {
+  const M = TL.marks;
+  if (a <= 0) return;
+  const appear = seg(t, M.morph + .8, M.morph + 1.0);
+  for (const [k, yc, lab] of [['q', BAND.q, 'CH1 · q'], ['k', BAND.k, 'CH2 · k'], ['p', BAND.p, 'q × k']]) {
+    const la = k === 'p' ? seg(t, M.prod - .2, M.prod + .2) : appear;
+    line(UI, [[150, yc], [930, yc]], COL.ui, .42 * a * la, 1.6);
+    text(UI, lab, 84, yc - 118, F.mono(28), COL.ui, .8 * a * la);
+  }
+  for (let i = 0; i < 8; i++) {
+    stem(BEAM, STX(i), BAND.q, Q0[i], a * appear, 3.2, flash(t, M.morph + .85 + i * .03));
+    stem(BEAM, STX(i), BAND.k, K0[i], a * appear, 3.2, flash(t, M.morph + .85 + i * .03));
+  }
+  // products: a sweep crosses the band; each product grows as it is passed; the running sum grows at the right
+  const sx = lerp(150, 930, seg(t, M.prod, M.prod + 1.8)); let run = 0;
+  if (t >= M.prod) {
+    for (let i = 0; i < 8; i++) {
+      const ti = M.prod + 1.8 * (STX(i) - 150) / 780, g = eo(seg(t, ti, ti + .22));
+      if (g > 0) { stem(BEAM, STX(i), BAND.p, Q0[i] * K0[i] * g, a, 3.2, flash(t, ti, .3)); run += Q0[i] * K0[i] * g; }
+    }
+    if (sx < 930) { line(HOT, [[sx, BAND.p - 105], [sx, BAND.p + 105]], COL.hot, .35 * a, 1.5); }
+    line(UI, [[SUMX - 30, BAND.p], [SUMX + 30, BAND.p]], COL.ui, .5 * a, 1.6);
+    text(UI, 'Σ', SUMX, BAND.p - 118, F.serif(40), COL.ui, .85 * a, 'center');
+    stem(BEAM, SUMX, BAND.p, run, a, 4.2, flash(t, M.sum, .6));
+  }
+  return run;
+}
+
+// ───────────────────────── shots 3–7: the score world ─────────────────────────
+function dAt(t) { const M = TL.marks; if (t < M.knob0) return 8; return Math.round(8 * Math.pow(8, eio(seg(t, M.knob0, M.knob1)))); }
+function sclock(t) { const M = TL.marks; return t < M.stop ? t : t < M.relight ? M.stop : M.stop + (t - M.relight); }
+function sc2t(s) { const M = TL.marks; return s < M.stop ? s : s - M.stop + M.relight; }
+function squeeze(t) { const M = TL.marks; return lerp(1, 1 / 8, eio(seg(t, M.squeeze0, M.squeeze1))); }
+let DROP = null, DROPD = null;
+function planDrops() {
+  const M = TL.marks, s0 = M.run + .45; DROP = new Float32Array(NS); DROPD = new Uint8Array(NS);
+  let s = s0;
+  for (let i = 0; i < NS; i++) { DROP[i] = s; DROPD[i] = dAt(sc2t(s)); const r = 1.6 + 118 * ss((s - s0 - .6) / 3.6); s += 1 / r; }
+}
+const PERS = 2.4, ENV = .7;
+const camW = { cx: 0, cy: .25, zx: 19.2, zy: 384 }, camD = { cx: 8, cy: sig(8), zx: 192, zy: 76800 };
+function fly(A, B, u) {               // log zoom, the target's screen offset shrinks linearly: no drift off screen
+  const zx = A.zx * Math.pow(B.zx / A.zx, u), zy = A.zy * Math.pow(B.zy / A.zy, u);
+  return { zx, zy, cx: B.cx + (A.cx - B.cx) * (1 - u) * A.zx / zx, cy: B.cy + (A.cy - B.cy) * (1 - u) * A.zy / zy };
+}
+function cam(t) {
+  const M = TL.marks;
+  const zx = 48 * Math.pow(19.2 / 48, eio(seg(t, M.knob0, M.knob1))), cy = lerp(-.35, .25, eio(seg(t, M.curve0, M.curve0 + 1.3)));
+  const base = { cx: 0, cy, zx, zy: 384 };
+  if (t < M.dive0) return base;
+  if (t < M.pull0) return fly(camW, camD, eio(seg(t, M.dive0, M.dive1)));
+  return fly(camW, camD, 1 - eio(seg(t, M.pull0, M.pull1)));   // the dive played backwards: no overshoot
+}
+function cloud(t, C, a, sq) {
+  if (a <= 0) return { n: 0 };
+  const s = sclock(t); let n = 0, sum = 0, sum2 = 0, cnt = 0;
+  clipG(BEAM); clipG(HOT);
+  let lo = 0, hi = NS; while (lo < hi) { const m = (lo + hi) >> 1; if (DROP[m] <= s) lo = m + 1; else hi = m; }   // drops already made
+  for (let i = lo - 1; i >= 0; i--) {
+    const age = s - DROP[i]; if (age > PERS * 3) break;
+    const d = DROPD[i], raw = score(i, d), x = raw * sq, y = -UJ[i] * ENV * Math.exp(-raw * raw / (2 * d));
+    const [px, py] = w2s(C, x, y), al = Math.exp(-age / PERS) * a;
+    if (px < G.x0 - 8 || px > G.x1 + 8) continue;
+    BEAM.globalAlpha = al; BEAM.fillStyle = COL.beam; BEAM.fillRect(px - 2.4, py - 2.4, 4.8, 4.8);
+    if (age < .14) dot(HOT, px, py, 4, COL.hot, (1 - age / .14) * a);
+    n++;
+  }
+  for (let i = 0; i < lo; i++) if (DROPD[i] === 64) { const v = score(i, 64); sum += v; sum2 += v * v; cnt++; }
+  BEAM.restore(); HOT.restore(); BEAM.globalAlpha = 1;
+  return { n, cnt, sd: cnt > 1 ? Math.sqrt(Math.max(0, sum2 / cnt - (sum / cnt) ** 2)) : 0 };
+}
+function envelope(t, C, d, sq, p, a) {
+  if (p <= 0 || a <= 0) return;
+  const sd = Math.sqrt(d) * sq, [xl] = s2w(C, G.x0, 0), [xr] = s2w(C, G.x1, 0), pts = [];
+  for (let i = 0; i <= 360; i++) { const x = lerp(xl, lerp(xl, xr, p), i / 360); pts.push(w2s(C, x, -ENV * Math.exp(-x * x / (2 * sd * sd)))); }
+  clipG(BEAM); line(BEAM, pts, COL.beam, .75 * a, 2.2); BEAM.restore();
+  if (p < 1) dot(HOT, ...pts[pts.length - 1], 5, COL.hot, a);
+}
+function curve(t, C, p, a, hiLo, hiHi, hiA) {
+  if (p <= 0 || a <= 0) return;
+  const [xl] = s2w(C, G.x0, 0), [xr] = s2w(C, G.x1, 0), x1 = lerp(xl, xr, p), pts = [], N = 900;
+  for (let i = 0; i <= N; i++) { const x = lerp(xl, x1, i / N); pts.push(w2s(C, x, sig(x))); }
+  clipG(BEAM); clipG(HOT);
+  // a fast beam leaves less light: the steep middle is drawn dimmer
+  for (let i = 0; i < N; i += 6) {
+    const q = pts.slice(i, i + 7), dx = q[q.length - 1][0] - q[0][0], dy = q[q.length - 1][1] - q[0][1];
+    const k = 1 - .42 * Math.abs(dy) / (Math.hypot(dx, dy) + 1e-6);
+    line(BEAM, q, COL.beam, a * k, 2.8);
+  }
+  if (hiA > 0) { const h = []; for (let i = 0; i <= 200; i++) { const x = lerp(hiLo, hiHi, i / 200); h.push(w2s(C, x, sig(x))); } line(HOT, h, COL.hot, hiA * a, 2.4); }
+  BEAM.restore(); HOT.restore();
+  if (p < 1) dot(HOT, ...pts[pts.length - 1], 6, COL.hot, a);
+}
+function tangent(C, x0, a, w = 3) {   // amber: the slope α(1−α) at x0, drawn across the graticule
+  if (a <= 0) return;
+  const y0 = sig(x0), m = slopeAt(x0), [xl] = s2w(C, G.x0, 0), [xr] = s2w(C, G.x1, 0);
+  clipG(AMB); line(AMB, [w2s(C, xl, y0 + m * (xl - x0)), w2s(C, xr, y0 + m * (xr - x0))], COL.amber, a, w); AMB.restore();
+}
+function probe(t, C, x0, a, fl) {
+  if (a <= 0) return;
+  const [px, py] = w2s(C, x0, sig(x0)), [, oy] = w2s(C, 0, 0);
+  if (px < G.x0 || px > G.x1 || py < G.y0 - 10 || py > G.y1 + 10) return;
+  clipG(UI); line(UI, [[px, py], [px, oy]], COL.ui, .55 * a, 1.4, [5, 7]); UI.restore();
+  for (let g = 8; g >= 1; g--) dot(BEAM, px - g * 1.2, py, 7 - g * .5, COL.beam, a * .08 * (9 - g) / 8);  // drawn afterglow
+  dot(BEAM, px, py, 9, COL.beam, a); dot(HOT, px, py, 5, COL.hot, a * (.6 + .4 * fl));
+}
+
+// ───────────────────────── HUD: readouts, scale row, subtitles ─────────────────────────
+function rows(list) {   // [[key, value, color, flash]] → aligned "key = value" lines under the formula
+  list.forEach(([k, v, c, f, a], i) => {
+    const y = 346 + i * 48, s = `${k.padEnd(6)} = ${v}`;
+    text(UI, s, 72, y, F.mono(36), c === 'amber' ? COL.amber : COL.ui, (a ?? 1) * (c === 'amber' ? 0 : 1));
+    if (c === 'amber') text(AMB, s, 72, y, F.mono(36), COL.amber, a ?? 1);
+    if (f > 0) text(HOT, s, 72, y, F.mono(36), COL.hot, f * .8);
+  });
+}
+function scaleRow(C, t, a, status) {
+  if (a <= 0) return;
+  const y = 1340;
+  text(UI, `SCORE/DIV ${fmtDiv(step5(C.zx))}`, 72, y, F.mono(28), COL.ui, .75 * a);
+  if (C.showY) text(UI, `α/DIV ${fmtDiv(step5(C.zy))}`, 470, y, F.mono(28), COL.ui, .75 * a);
+  if (status) {
+    const run = status === 'RUN';
+    dot(run ? HOT : AMB, 846, y - 10, 8, run ? COL.hot : COL.amber, a * (run ? .55 + .45 * (Math.sin(t * 9) > 0) : 1));
+    text(run ? UI : AMB, status, 864, y, F.mono(28, 700), run ? COL.ui : COL.amber, a);
+  }
+}
+function wrap(s, font, maxw) { const out = []; let cur = ''; for (const w of s.split(' ')) { const n = cur ? cur + ' ' + w : w; if (tw(n, font) > maxw && cur) { out.push(cur); cur = w; } else cur = n; } if (cur) out.push(cur); return out; }
+function subtitle(s, a) {
+  if (!s || a <= 0) return;
+  const f = F.serif(48), L = wrap(s, f, 820), y0 = 1428;
+  line(UI, [[74, y0 - 40], [74, y0 + (L.length - 1) * 60 + 12]], COL.ui, .8 * a, 3);
+  L.forEach((l, i) => text(UI, l, 98, y0 + i * 60, f, COL.ui, a));
+}
+function cueAt(t) { for (const c of TL.cues) if (t >= c.t0 && t < c.t1) return [c, clamp(Math.min((t - c.t0) / .16, (c.t1 - t) / .16))]; return [null, 0]; }
+
+// ───────────────────────── the film: render(t) ─────────────────────────
+let TL = null, TEXTSET = [];
+function render(t) {
+  const M = TL.marks;
+  clearLayers(); TEXTSET = [];
+  const tag = '@complex2vec · EP 01'; text(UI, tag, 72, 176, F.mono(26, 600), COL.ui, .5); TEXTSET.push({ id: 'tag', text: tag, x0: 72, y0: 150, x1: 72 + tw(tag, F.mono(26, 600)), y1: 182, pass: true });
+
+  // power-on: dot → line → graticule
+  const pw = seg(t, M.power, M.power + .32);
+  if (pw < .3) dot(HOT, G.cx, G.cy, 6, COL.hot, pw / .3);
+  else if (pw < .62) line(HOT, [[lerp(G.cx, G.x0, (pw - .3) / .32), G.cy], [lerp(G.cx, G.x1, (pw - .3) / .32), G.cy]], COL.hot, 1, 2.5);
+  const world = t >= M.run - .3, C = world ? cam(t) : { cx: 0, cy: -.35, zx: 48, zy: 384 };
+  const dim = 1 - .88 * ss(seg(t, M.title, M.title + .6));
+  grid(C, ss((pw - .5) / .5) * dim);
+
+  // formula
+  const xf = formulaXform(t), div = t >= M.relight ? 1 : 0, strike = t < M.strike ? 0 : 1 - ss(seg(t, M.relight, M.relight + .5));
+  const qk = t < M.morph ? 1 : Math.max(1 - seg(t, M.morph, M.morph + .3), seg(t, M.morph + .9, M.morph + 1.3));
+  drawFormula(t, { xf, p: seg(t, M.write0, M.write1), qk, div: div * seg(t, M.relight, M.relight + .3), divFlash: flash(t, M.relight + .05, .6),
+    strike, strikeP: eo(seg(t, M.strike + .25, M.strike + .5)) });
+  if (t >= M.write0) TEXTSET.push({ id: 'formula', text: 'softmax(QKᵀ/√d)V', x0: xf.x, y0: xf.y - FS * xf.k, x1: xf.x + FORM.w * xf.k, y1: xf.y + FS * .3 * xf.k });
+
+  // text into geometry: the light of Q, K, T flies into the stems
+  if (t >= M.morph && t < M.morph + 1.1) {
+    const T0 = { k: 1, x: (W - FORM.w) / 2, y: 860 }, fade = 1 - seg(t, M.morph + .85, M.morph + 1.05);
+    for (const p of PARTS) {
+      const u = eio(seg(t, M.morph + p.delay, M.morph + p.delay + .75)), x0 = T0.x + p.sx, y0 = T0.y + p.sy;
+      const v = (p.ch ? K0 : Q0)[p.st], x1 = STX(p.st), y1 = (p.ch ? BAND.k : BAND.q) - clamp(v, -1.7, 1.7) * U * p.f;
+      const pos = w => [lerp(x0, x1, w) + Math.sin(Math.PI * w) * p.bend, lerp(y0, y1, w)];
+      line(BEAM, [pos(Math.max(0, u - .08)), pos(u)], COL.beam, .9 * fade, 2.2);
+      if (u > 0 && u < 1) dot(HOT, ...pos(u), 1.8, COL.hot, fade);
+    }
+  }
+  // shot 2
+  const s2a = t < M.morph ? 0 : 1 - seg(t, M.run - .1, M.run + .35);
+  const run = dotProduct(t, s2a) || 0;
+  if (s2a > 0 && t >= M.morph + .8) {
+    [['CH1 · q', BAND.q], ['CH2 · k', BAND.k]].forEach(([s, y]) => TEXTSET.push({ id: s, text: s, x0: 84, y0: y - 146, x1: 84 + tw(s, F.mono(28)), y1: y - 110 }));
+  }
+  // the sum drops onto the score axis and becomes the first dot
+  if (t >= M.run - .1 && t < M.run + .45) {
+    const u = eio(seg(t, M.run - .1, M.run + .45)), d0 = 8, raw = score(0, d0);
+    const [tx, ty] = w2s(C, raw, -UJ[0] * ENV * Math.exp(-raw * raw / (2 * d0))), y0 = BAND.p - clamp(run, -1.7, 1.7) * U;
+    dot(HOT, lerp(SUMX, tx, u), lerp(y0, ty, u) - Math.sin(Math.PI * u) * 120, 6, COL.hot);
+  }
+
+  // shots 3–7
+  let readout = [];
+  if (t < M.run - .1) {
+    if (t >= M.stems1) readout.push(['d', '8', '', 0]);
+    if (t >= M.prod) readout.push(['q·k', sgn(run), '', flash(t, M.sum, .6)]);
+  }
+  if (world) {
+    const sq = squeeze(t), d = dAt(Math.min(t, M.stop)), wa = dim;
+    const cl = cloud(t, C, wa, sq);
+    const envP = seg(t, TL.lines[2].t0 + .3, TL.lines[2].t0 + 1.2);
+    envelope(t, C, d, sq, envP, wa);
+    const cp = seg(t, M.curve0, M.curve1);
+    curve(t, C, cp, wa, -2.6, 2.6, .9 * Math.sin(Math.PI * seg(t, M.steep, M.steep + 1.2)));
+    C.showY = t >= M.curve0;
+    // the probe point and its tangents
+    const xp = t < M.squeeze0 ? 8 : 8 * sq, pa = seg(t, M.point, M.point + .25) * wa;
+    probe(t, C, xp, pa, flash(t, M.point, .5) + flash(t, M.squeeze1, .5));
+    const ta = seg(t, M.slope, M.slope + .3) * wa;
+    if (t >= M.squeeze0) tangent(C, 8, ta * .38, 2.2);            // ghost of the flat tangent stays as the reference
+    tangent(C, xp, ta);
+    // readouts
+    if (t < M.curve0) {
+      readout.push(['d', String(d), '', flash(t, M.knob1, .5)]);
+      if (envP > 0) readout.push(['σ = √d', Math.sqrt(d).toFixed(2), '', flash(t, M.sigma, .6)]);
+      if (t >= M.sigma - .2 && cl.cnt > 30) readout.push(['σ meas', cl.sd.toFixed(1) + `  (n=${cl.cnt})`, '', 0, .8]);
+    } else {
+      const al = sig(xp);
+      if (t >= M.relight) readout.push(['÷√d', '÷' + Math.sqrt(64).toFixed(0), '', flash(t, M.relight, .6)]);
+      readout.push(['Δ', xp.toFixed(2), '', 0, seg(t, M.point, M.point + .2)]);
+      readout.push(['α', al.toFixed(5), '', flash(t, M.point, .5), seg(t, M.point, M.point + .2)]);
+      if (t >= M.slope) readout.push(['slope', slopeAt(xp).toFixed(5), 'amber', flash(t, M.flat, .6) + flash(t, M.flows, .6)]);
+    }
+    scaleRow(C, t, seg(t, M.run, M.run + .4) * (1 - seg(t, M.title, M.title + .5)), t >= M.run && t < M.relight && t >= M.stop ? 'STOP' : 'RUN');
+    // verdict: amber cursors on both tangents, then the ratio
+    const va = seg(t, M.cursors, M.cursors + .3) * (1 - ss(seg(t, M.title, M.title + .5)));
+    if (va > 0) {
+      const [ax, ay] = w2s(C, 8, sig(8)), [bx, by] = w2s(C, 1, sig(1));
+      const sA = slopeAt(8).toFixed(5), sB = slopeAt(1).toFixed(5);
+      text(AMB, sA, ax, ay - 30, F.mono(32, 600), COL.amber, va, 'center');
+      text(AMB, sB, bx + 30, by + 12, F.mono(32, 600), COL.amber, seg(t, M.cursors + .4, M.cursors + .7) * va);
+      const lk = seg(t, M.lock - .15, M.lock + .1) * (1 - ss(seg(t, M.title, M.title + .5)));
+      const ratio = Math.round(slopeAt(1) / slopeAt(8)) + '×';
+      text(AMB, 'slope ratio', 96, 640, F.mono(32), COL.amber, lk * .85);
+      text(AMB, ratio, 90, 800, F.mono(170, 700), COL.amber, lk);
+      const fl = flash(t, M.lock, .5); if (fl > 0) text(HOT, ratio, 90, 800, F.mono(170, 700), COL.hot, fl * .7);
+      if (lk > 0) TEXTSET.push({ id: 'verdict', text: 'slope ratio ' + ratio, x0: 90, y0: 610, x1: 90 + tw(ratio, F.mono(170, 700)), y1: 810 });
+      TEXTSET.push({ id: 'sA', text: sA, x0: ax - 70, y0: ay - 60, x1: ax + 70, y1: ay - 20, pass: true });
+    }
+  }
+  if (readout.length) rows(readout);
+  TEXTSET.push({ id: 'readouts', text: readout.map(r => r[0]).join('|'), x0: 72, y0: 310, x1: 700, y1: 480, pass: true });
+
+  // ending: the name, written by the beam
+  if (t >= M.title) {
+    const l1 = 'Scaled', l2 = 'dot-product attention';
+    written(t, M.title, M.title + .6, l1, 96, 720, F.ital(104), COL.ui);
+    written(t, M.title + .55, M.title + 1.9, l2, 96, 822, F.serif(78), COL.ui);
+    TEXTSET.push({ id: 'title', text: l1 + ' ' + l2, x0: 96, y0: 630, x1: 96 + tw(l2, F.serif(78)), y1: 840 });
+    const cta = 'Play with it yourself → link in bio';   // the call to action: the lab lives behind the link in bio
+    if (t >= M.title + 2.0) {
+      written(t, M.title + 2.0, M.title + 2.9, cta, 96, 930, F.mono(34, 600), COL.ui, 1, UI);
+      TEXTSET.push({ id: 'cta', text: cta, x0: 96, y0: 895, x1: 96 + tw(cta, F.mono(34, 600)), y1: 942 });
+    }
+  }
+  const [cue, ca] = cueAt(t); if (cue) subtitle(cue.text, ca);
+  compose();
+}
+
+// ───────────────────────── sound and cue events (exported by events.mjs) ─────────────────────────
+function events() {
+  const M = TL.marks, E = [];
+  const ev = (t, type, o = {}) => E.push({ t: +t.toFixed(3), type, ...o });
+  ev(M.power, 'relay');
+  for (const e of FORM.parts) ev(M.write0 + (M.write1 - M.write0) * (e.x / FORM.w), 'tick');
+  ev(M.strike, 'cursor'); ev(M.strike + .25, 'zap');
+  ev(M.morph, 'sweep', { d: 1.0, up: 1 });
+  for (let i = 0; i < 8; i++) ev(M.morph + .85 + i * .03, 'blip', { f: 1800 + 90 * i, v: .35 });
+  for (let i = 0; i < 8; i++) ev(M.prod + 1.8 * (STX(i) - 150) / 780, 'blip', { f: 1400 + 260 * clamp(Q0[i] * K0[i], -2, 2), v: .6 });
+  ev(M.sum, 'readout');
+  ev(M.run, 'relay'); ev(M.run, 'music_on');
+  for (let i = 0; i < NS; i++) { const t = sc2t(DROP[i]); if (t > M.end) break; if (i < 24 || i % 5 === 0) ev(t, 'drop', { v: i < 24 ? .7 : .25, p: (UJ[i] - .5) * .8 }); }
+  let pd = 8; for (let t = M.knob0; t <= M.knob1 + .05; t += 1 / 48) { const d = dAt(t); if (d !== pd && [16, 32, 48, 64].includes(d)) ev(t, 'detent', { d }); if (d !== pd && d % 4 === 0) ev(t, 'click'); pd = d; }
+  ev(M.sigma, 'readout'); ev(TL.lines[2].t0 + .3, 'buzz', { d: .9 });
+  ev(M.curve0, 'buzz', { d: M.curve1 - M.curve0 }); ev(M.point, 'ping');
+  ev(M.stop, 'stop'); ev(M.dive0, 'sweep', { d: M.dive1 - M.dive0, up: 0 });
+  let ps = ''; for (let t = M.dive0; t <= M.pull1; t += 1 / 48) { const C = cam(t), s = step5(C.zx) + '/' + step5(C.zy); if (ps && s !== ps) ev(t, 'click'); ps = s; }
+  ev(M.slope, 'cursor'); ev(M.flat, 'readout');
+  ev(M.pull0, 'sweep', { d: M.pull1 - M.pull0, up: 1 });
+  ev(M.relight, 'relight'); ev(M.relight, 'music_on');
+  ev(M.squeeze0, 'whoosh', { d: M.squeeze1 - M.squeeze0 }); ev(M.squeeze1, 'land');
+  ev(M.steep, 'blip', { f: 2600, v: .5 }); ev(M.flows, 'readout');
+  ev(M.cursors, 'cursor'); ev(M.cursors + .4, 'cursor'); ev(M.lock, 'lock');
+  for (const [s, t0, t1, f] of [['Scaled', M.title, M.title + .6, F.ital(104)], ['dot-product attention', M.title + .55, M.title + 1.9, F.serif(78)], ['Play with it yourself → link in bio', M.title + 2.0, M.title + 2.9, F.mono(34, 600)]]) {
+    const w = tw(s, f); let x = 0; for (const ch of s) { if (ch !== ' ') ev(t0 + (t1 - t0) * x / w, 'tick', { v: .5 }); x += tw(ch, f); }
+  }
+  return E.sort((a, b) => a.t - b.t);
+}
+
+// ───────────────────────── the interactive lab (?lab=1) ─────────────────────────
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const fmtSmall = v => v >= 1e-4 ? v.toFixed(5) : v.toExponential(1);
+const fmtRatio = r => r < 10 ? r.toFixed(1) + '×' : r < 1e5 ? Math.round(r) + '×' : '~10' + String(Math.round(Math.log10(r))).split('').map(c => SUP[+c]).join('') + '×';
+const LS = { d: 64, scaled: false, probe: null, t0: performance.now() };
+function labDraw(now) {
+  const t = (now - LS.t0) / 1000, d = LS.d, sq = LS.scaled ? 1 / Math.sqrt(d) : 1, sd = Math.sqrt(d) * sq;
+  clearLayers();
+  text(UI, '@complex2vec · LAB', 72, 176, F.mono(26, 600), COL.ui, .5);
+  const C = { cx: 0, cy: .25, zx: clamp(480 / Math.max(3.2 * sd, 4), 2, 400), zy: 384, showY: true };
+  grid(C, 1);
+  drawFormula(t, { xf: { k: 60 / FS, x: 72, y: 262 }, p: 1, qk: 1, div: LS.scaled ? 1 : 0, divFlash: 0, strike: LS.scaled ? 0 : 1, strikeP: 1 });
+  // a running stream of real dot products at this d
+  const rate = 70, n = Math.floor(t * rate);
+  clipG(BEAM);
+  for (let j = Math.max(0, n - 260); j <= n; j++) {
+    const i = j % NS, raw = score(i, d), age = t - j / rate, [px, py] = w2s(C, raw * sq, -UJ[i] * ENV * Math.exp(-raw * raw / (2 * d)));
+    BEAM.globalAlpha = Math.exp(-age / PERS); BEAM.fillStyle = COL.beam; BEAM.fillRect(px - 2.4, py - 2.4, 4.8, 4.8);
+  }
+  BEAM.restore(); BEAM.globalAlpha = 1;
+  envelope(t, C, d, sq, 1, 1);
+  curve(t, C, 1, 1, 0, 0, 0);
+  const xp = LS.probe ?? sd;
+  probe(t, C, xp, 1, 0); tangent(C, xp, 1);
+  const ref = Math.sqrt(d), ratio = slopeAt(1) / slopeAt(ref);
+  rows([['d', String(d), '', 0], ['σ', sd.toFixed(2), '', 0], ['Δ', xp.toFixed(2), '', 0], ['slope', fmtSmall(slopeAt(xp)), 'amber', 0]]);
+  scaleRow(C, t, 1, LS.scaled ? '÷√d' : 'RAW');
+  const msg = LS.probe != null ? `Probe at Δ = ${xp.toFixed(2)}: slope ${fmtSmall(slopeAt(xp))}.`
+    : LS.scaled ? `Scaled: a 1σ score sits at Δ = 1, slope ${slopeAt(1).toFixed(3)}.`
+    : `Raw: a 1σ score sits at Δ = ${ref.toFixed(1)}, slope ${fmtSmall(slopeAt(ref))}, ${fmtRatio(ratio)} flatter than scaled.`;
+  subtitle(msg, 1);
+  compose();
+}
+function labFrame(now) { labDraw(now); requestAnimationFrame(labFrame); }
+function startLab() {
+  document.body.classList.add('lab'); const ui = document.getElementById('ui'); ui.hidden = false;
+  const dIn = document.getElementById('dIn'), dOut = document.getElementById('dOut'), sIn = document.getElementById('sIn');
+  const upd = () => { LS.d = Math.max(1, Math.round(Math.pow(2, +dIn.value))); dOut.textContent = LS.d; LS.scaled = sIn.checked; };
+  if (QS.has('d')) dIn.value = Math.log2(clamp(+QS.get('d') || 64, 1, 1024));
+  if (QS.get('s') === '1') sIn.checked = true;
+  dIn.oninput = upd; sIn.onchange = upd; upd();
+  const cv = document.getElementById('c');
+  const toWorld = e => { const r = cv.getBoundingClientRect(), sx = (e.clientX - r.left) * W / r.width, sy = (e.clientY - r.top) * H / r.height;
+    if (sy < G.y0 || sy > G.y1) return; const sd = LS.scaled ? 1 : Math.sqrt(LS.d), zx = clamp(480 / Math.max(3.2 * sd, 4), 2, 400); LS.probe = (sx - G.cx) / zx; };
+  cv.addEventListener('pointerdown', e => { toWorld(e); cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (e.buttons) toWorld(e); });
+  cv.addEventListener('dblclick', () => { LS.probe = null; });
+  window.render = t => labDraw(LS.t0 + 4000 + t * 1000); window.DUR = 10; window.READY = true;
+  if (!navigator.webdriver) requestAnimationFrame(labFrame);
+}
+
+// ───────────────────────── boot ─────────────────────────
+(async function boot() {
+  await Promise.all([document.fonts.load(F.serif(108)), document.fonts.load(F.ital(108)), document.fonts.load(F.mono(32))]);
+  FORM = layoutFormula();
+  if (LAB) { TL = { marks: {} }; sampleGlyphs(); startLab(); return; }
+  TL = await (await fetch('timeline.json')).json();
+  sampleGlyphs(); planDrops();
+  window.DUR = TL.dur; window.EV = events();
+  window.TEXTS = t => { render(t); return TEXTSET; };
+  window.render = render;
+  window.READY = true;
+  if (!navigator.webdriver && !QS.has('still')) {   // opened in a normal browser: play the film live (no sound)
+    const t0 = performance.now(); const loop = now => { render(((now - t0) / 1000) % TL.dur); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+  }
+})();
+</script>
+</body>
+</html>

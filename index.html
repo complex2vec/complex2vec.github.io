@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C2V Foundry · Complex ideas → vectors you can see</title>
+<meta name="description" content="AI engineering, one concept per minute. Short films with real numbers, and interactive labs you can play with.">
+<meta property="og:title" content="C2V Foundry">
+<meta property="og:description" content="Complex ideas → vectors you can see. Short AI explainers with interactive labs.">
+<meta property="og:image" content="https://complex2vec.github.io/og.jpg">
+<meta property="og:url" content="https://complex2vec.github.io/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="avatar.jpg">
+<style>
+@font-face { font-family: STIX; src: url(ep01/fonts/STIXTwoText.ttf); font-weight: 400 700; }
+@font-face { font-family: STIX; src: url(ep01/fonts/STIXTwoText-Italic.ttf); font-style: italic; font-weight: 400 700; }
+@font-face { font-family: JBM; src: url(ep01/fonts/JetBrainsMono.ttf); font-weight: 100 800; }
+:root { --bg: #010402; --amb: #0B2412; --beam: #4DFF88; --ui: #8DFFB0; --hot: #E6FFEC; --amber: #FFB547; --line: #8DFFB033; }
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; min-height: 100vh; color: var(--ui); font: 400 16px/1.55 JBM, ui-monospace, monospace;
+  background: radial-gradient(ellipse at 50% 20%, #0B241299, transparent 70%),
+    repeating-linear-gradient(0deg, transparent 0 63px, #8DFFB00d 63px 64px), repeating-linear-gradient(90deg, transparent 0 63px, #8DFFB00d 63px 64px), var(--bg); }
+main { max-width: 720px; margin: 0 auto; padding: 48px 16px 64px; }
+header { text-align: center; }
+header img { width: 112px; height: 112px; border-radius: 50%; border: 1px solid var(--line); box-shadow: 0 0 32px #4DFF8833; }
+h1 { font: 500 clamp(40px, 9vw, 60px)/1.1 STIX, serif; color: var(--hot); margin: 16px 0 4px; text-shadow: 0 0 18px #4DFF8855; }
+h1 em { color: var(--ui); }
+.handle { opacity: .65; font-weight: 600; }
+.tag { margin: 8px 0 20px; font-size: 17px; }
+nav.social { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+nav.social a { color: var(--ui); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+nav.social a:hover, nav.social a:focus-visible { border-color: var(--beam); color: var(--hot); box-shadow: 0 0 12px #4DFF8844; }
+h2 { font: 600 13px JBM; letter-spacing: .14em; text-transform: uppercase; opacity: .6; margin: 48px 0 16px; }
+.ep { display: grid; grid-template-columns: 132px 1fr; gap: 20px; align-items: center; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #01040299; }
+.ep img { width: 132px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.ep .num { font-size: 13px; opacity: .6; font-weight: 600; }
+.ep h3 { font: 500 26px/1.2 STIX, serif; color: var(--hot); margin: 4px 0 8px; }
+.ep p { margin: 0 0 14px; font-size: 14px; opacity: .85; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { display: inline-block; text-decoration: none; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+.btn.lab { background: var(--beam); color: var(--bg); box-shadow: 0 0 18px #4DFF8855; }
+.btn.film { border: 1px solid var(--line); color: var(--ui); }
+.btn:hover, .btn:focus-visible { filter: brightness(1.12); outline: none; box-shadow: 0 0 0 2px var(--hot); }
+.soon { text-align: center; opacity: .55; font-size: 14px; margin-top: 16px; }
+footer { margin-top: 56px; text-align: center; font-size: 12px; opacity: .5; }
+@media (max-width: 480px) { .ep { grid-template-columns: 96px 1fr; gap: 14px; } .ep img { width: 96px; } .ep h3 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="avatar.jpg" alt="C2V Foundry logo: a complex number drawn as a vector in the unit circle">
+    <h1>C2V <em>Foundry</em></h1>
+    <div class="handle">@complex2vec</div>
+    <p class="tag">Complex ideas → vectors you can see.</p>
+    <nav class="social" aria-label="Channels">
+      <a href="https://www.youtube.com/@complex2vec">YouTube</a>
+      <a href="https://www.tiktok.com/@complex2vec">TikTok</a>
+      <a href="https://www.instagram.com/complex2vec">Instagram</a>
+      <a href="https://www.facebook.com/complex2vec">Facebook</a>
+      <a href="https://x.com/complex2vec">X</a>
+    </nav>
+  </header>
+
+  <h2>Interactive labs</h2>
+  <div id="eps"></div>
+  <p class="soon">More episodes on the way.</p>
+
+  <footer>Every frame and sound is made in code. Narration is an AI voice.</footer>
+</main>
+<script>
+// Add an episode here when it is published: folder = epNN, lab = the starting state worth sharing
+const EPISODES = [
+  { folder: 'ep01', num: 'EP 01', title: 'Why attention divides by √d',
+    blurb: 'Drop the √d and softmax goes flat: the gradient shrinks 586×. Turn up d yourself and watch it happen.',
+    lab: 'ep01/?lab=1&d=1024' },
+];
+document.getElementById('eps').innerHTML = EPISODES.map(e => `
+  <article class="ep">
+    <img src="${e.folder}/poster.jpg" alt="${e.title}: frame from the film" loading="lazy">
+    <div>
+      <div class="num">${e.num}</div>
+      <h3>${e.title}</h3>
+      <p>${e.blurb}</p>
+      <div class="btns"><a class="btn lab" href="${e.lab}">Try the lab →</a><a class="btn film" href="${e.folder}/">Watch the animation</a></div>
+    </div>
+  </article>`).join('');
+document.fonts.ready.then(() => { window.DUR = 1; window.render = () => {}; window.READY = true; });   // lets the film tools screenshot this page
+</script>
+</body>
+</html>

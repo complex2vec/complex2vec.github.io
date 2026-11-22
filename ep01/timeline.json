@@ -1,0 +1,841 @@
+{
+ "fps": 24,
+ "size": [
+  1080,
+  1920
+ ],
+ "bpm": 100,
+ "dur": 53.839,
+ "marks": {
+  "power": 0.0,
+  "write0": 0.04,
+  "write1": 0.95,
+  "strike": 1.09,
+  "morph": 6.74,
+  "stems1": 7.69,
+  "prod": 7.88,
+  "sum": 9.88,
+  "run": 11.55,
+  "knob0": 13.92,
+  "knob1": 17.4,
+  "sigma": 19.94,
+  "curve0": 21.0,
+  "curve1": 22.6,
+  "point": 24.88,
+  "stop": 27.432,
+  "dive0": 27.682,
+  "dive1": 29.182,
+  "slope": 29.64,
+  "flat": 31.56,
+  "pull0": 32.133,
+  "pull1": 33.133,
+  "relight": 33.0,
+  "squeeze0": 35.32,
+  "squeeze1": 37.02,
+  "steep": 39.36,
+  "flows": 40.58,
+  "cursors": 42.6,
+  "lock": 44.78,
+  "title": 47.5,
+  "end": 53.839
+ },
+ "lines": [
+  {
+   "id": "L01",
+   "t0": 0.55,
+   "t1": 4.885,
+   "text": "Delete one division from this formula, and a Transformer can barely learn.",
+   "sub": "Delete one division from this formula, and a Transformer can barely learn.",
+   "words": [
+    [
+     "Delete",
+     0.55,
+     0.79
+    ],
+    [
+     "one",
+     0.79,
+     1.09
+    ],
+    [
+     "division",
+     1.09,
+     1.39
+    ],
+    [
+     "from",
+     1.39,
+     1.81
+    ],
+    [
+     "this",
+     1.81,
+     1.97
+    ],
+    [
+     "formula,",
+     1.97,
+     2.47
+    ],
+    [
+     "and",
+     2.87,
+     2.95
+    ],
+    [
+     "a",
+     2.95,
+     3.01
+    ],
+    [
+     "transformer",
+     3.01,
+     3.47
+    ],
+    [
+     "can",
+     3.47,
+     3.97
+    ],
+    [
+     "barely",
+     3.97,
+     4.23
+    ],
+    [
+     "learn.",
+     4.23,
+     4.69
+    ]
+   ]
+  },
+  {
+   "id": "L02",
+   "t0": 5.4,
+   "t1": 10.76,
+   "text": "An attention score is a dot product. Multiply d pairs of numbers, then add them up.",
+   "sub": "An attention score is a dot product. Multiply d pairs of numbers, then add them up.",
+   "words": [
+    [
+     "An",
+     5.4,
+     5.48
+    ],
+    [
+     "attention",
+     5.48,
+     5.74
+    ],
+    [
+     "score",
+     5.74,
+     6.24
+    ],
+    [
+     "is",
+     6.24,
+     6.62
+    ],
+    [
+     "a",
+     6.62,
+     6.74
+    ],
+    [
+     "dot",
+     6.74,
+     6.98
+    ],
+    [
+     "product,",
+     6.98,
+     7.38
+    ],
+    [
+     "multiply",
+     7.88,
+     8.28
+    ],
+    [
+     "D",
+     8.28,
+     8.68
+    ],
+    [
+     "pairs",
+     8.68,
+     8.96
+    ],
+    [
+     "of",
+     8.96,
+     9.2
+    ],
+    [
+     "numbers",
+     9.2,
+     9.48
+    ],
+    [
+     "then",
+     9.48,
+     9.88
+    ],
+    [
+     "add",
+     9.88,
+     10.18
+    ],
+    [
+     "them",
+     10.18,
+     10.38
+    ],
+    [
+     "up.",
+     10.38,
+     10.58
+    ]
+   ]
+  },
+  {
+   "id": "L03",
+   "t0": 12.0,
+   "t1": 15.376,
+   "text": "Each product has variance one, so the sum has variance d.",
+   "sub": "Each product has variance 1, so the sum has variance d.",
+   "words": [
+    [
+     "Each",
+     12.0,
+     12.14
+    ],
+    [
+     "product",
+     12.14,
+     12.48
+    ],
+    [
+     "has",
+     12.48,
+     12.74
+    ],
+    [
+     "Variance",
+     12.74,
+     13.2
+    ],
+    [
+     "1,",
+     13.2,
+     13.44
+    ],
+    [
+     "so",
+     13.68,
+     13.8
+    ],
+    [
+     "the",
+     13.8,
+     13.92
+    ],
+    [
+     "sum",
+     13.92,
+     14.12
+    ],
+    [
+     "has",
+     14.12,
+     14.36
+    ],
+    [
+     "Variance",
+     14.36,
+     14.88
+    ],
+    [
+     "D.",
+     14.88,
+     15.12
+    ]
+   ]
+  },
+  {
+   "id": "L04",
+   "t0": 16.2,
+   "t1": 20.489,
+   "text": "At d equals sixty-four, scores swing by about plus or minus eight.",
+   "sub": "At d = 64, scores swing by about ±8.",
+   "words": [
+    [
+     "At",
+     16.2,
+     16.28
+    ],
+    [
+     "d",
+     16.28,
+     16.44
+    ],
+    [
+     "equals",
+     16.44,
+     16.8
+    ],
+    [
+     "64,",
+     16.8,
+     17.4
+    ],
+    [
+     "scores",
+     17.78,
+     18.02
+    ],
+    [
+     "swing",
+     18.02,
+     18.46
+    ],
+    [
+     "by",
+     18.46,
+     18.68
+    ],
+    [
+     "about",
+     18.68,
+     18.96
+    ],
+    [
+     "plus",
+     18.96,
+     19.28
+    ],
+    [
+     "or",
+     19.28,
+     19.62
+    ],
+    [
+     "minus",
+     19.62,
+     19.94
+    ],
+    [
+     "8.",
+     19.94,
+     20.24
+    ]
+   ]
+  },
+  {
+   "id": "L05",
+   "t0": 21.0,
+   "t1": 27.082,
+   "text": "Softmax turns a gap that big into a near-certain choice. One token takes almost all the weight.",
+   "sub": "Softmax turns a gap that big into a near-certain choice. One token takes almost all the weight.",
+   "words": [
+    [
+     "Softmax",
+     21.0,
+     21.44
+    ],
+    [
+     "turns",
+     21.44,
+     21.9
+    ],
+    [
+     "a",
+     21.9,
+     22.08
+    ],
+    [
+     "gap",
+     22.08,
+     22.32
+    ],
+    [
+     "that",
+     22.32,
+     22.58
+    ],
+    [
+     "big",
+     22.58,
+     22.84
+    ],
+    [
+     "into",
+     22.84,
+     23.14
+    ],
+    [
+     "a",
+     23.14,
+     23.34
+    ],
+    [
+     "near",
+     23.34,
+     23.52
+    ],
+    [
+     "certain",
+     23.52,
+     23.78
+    ],
+    [
+     "choice,",
+     23.78,
+     24.28
+    ],
+    [
+     "one",
+     24.88,
+     24.94
+    ],
+    [
+     "token",
+     24.94,
+     25.2
+    ],
+    [
+     "takes",
+     25.2,
+     25.56
+    ],
+    [
+     "almost",
+     25.56,
+     25.94
+    ],
+    [
+     "all",
+     25.94,
+     26.36
+    ],
+    [
+     "the",
+     26.36,
+     26.56
+    ],
+    [
+     "weight.",
+     26.56,
+     26.82
+    ]
+   ]
+  },
+  {
+   "id": "L06",
+   "t0": 28.8,
+   "t1": 32.033,
+   "text": "But learning needs the slope of this curve. Out here, it's flat.",
+   "sub": "But learning needs the slope of this curve. Out here, it's flat.",
+   "words": [
+    [
+     "But",
+     28.8,
+     28.88
+    ],
+    [
+     "learning",
+     28.88,
+     29.1
+    ],
+    [
+     "needs",
+     29.1,
+     29.38
+    ],
+    [
+     "the",
+     29.38,
+     29.64
+    ],
+    [
+     "slope",
+     29.64,
+     29.88
+    ],
+    [
+     "of",
+     29.88,
+     30.1
+    ],
+    [
+     "this",
+     30.1,
+     30.26
+    ],
+    [
+     "curve,",
+     30.26,
+     30.52
+    ],
+    [
+     "out",
+     30.88,
+     31.08
+    ],
+    [
+     "here",
+     31.08,
+     31.28
+    ],
+    [
+     "it's",
+     31.28,
+     31.56
+    ],
+    [
+     "flat.",
+     31.56,
+     31.78
+    ]
+   ]
+  },
+  {
+   "id": "L07",
+   "t0": 33.0,
+   "t1": 35.764,
+   "text": "Divide by the square root of d. Here, that's eight.",
+   "sub": "Divide by √d. Here, that's 8.",
+   "words": [
+    [
+     "Divide",
+     33.0,
+     33.2
+    ],
+    [
+     "by",
+     33.2,
+     33.5
+    ],
+    [
+     "the",
+     33.5,
+     33.58
+    ],
+    [
+     "square",
+     33.58,
+     33.78
+    ],
+    [
+     "root",
+     33.78,
+     34.08
+    ],
+    [
+     "of",
+     34.08,
+     34.2
+    ],
+    [
+     "D.",
+     34.2,
+     34.36
+    ],
+    [
+     "Here",
+     34.78,
+     34.92
+    ],
+    [
+     "that's",
+     34.92,
+     35.32
+    ],
+    [
+     "8.",
+     35.32,
+     35.48
+    ]
+   ]
+  },
+  {
+   "id": "L08",
+   "t0": 36.6,
+   "t1": 41.412,
+   "text": "The variance is back to one, the scores land on the steep part, and the gradient flows.",
+   "sub": "The variance is back to 1, the scores land on the steep part, and the gradient flows.",
+   "words": [
+    [
+     "The",
+     36.6,
+     36.66
+    ],
+    [
+     "variance",
+     36.66,
+     36.96
+    ],
+    [
+     "is",
+     36.96,
+     37.3
+    ],
+    [
+     "back",
+     37.3,
+     37.54
+    ],
+    [
+     "to",
+     37.54,
+     37.74
+    ],
+    [
+     "1,",
+     37.74,
+     37.94
+    ],
+    [
+     "the",
+     38.2,
+     38.3
+    ],
+    [
+     "scores",
+     38.3,
+     38.56
+    ],
+    [
+     "land",
+     38.56,
+     39.02
+    ],
+    [
+     "on",
+     39.02,
+     39.26
+    ],
+    [
+     "the",
+     39.26,
+     39.36
+    ],
+    [
+     "steep",
+     39.36,
+     39.54
+    ],
+    [
+     "part",
+     39.54,
+     39.86
+    ],
+    [
+     "and",
+     39.86,
+     40.16
+    ],
+    [
+     "the",
+     40.16,
+     40.26
+    ],
+    [
+     "gradient",
+     40.26,
+     40.58
+    ],
+    [
+     "flows.",
+     40.58,
+     40.94
+    ]
+   ]
+  },
+  {
+   "id": "L09",
+   "t0": 42.6,
+   "t1": 46.66,
+   "text": "Without the division, that gradient is almost six hundred times smaller.",
+   "sub": "Without it, the gradient is ~586× smaller.",
+   "words": [
+    [
+     "Without",
+     42.6,
+     42.8
+    ],
+    [
+     "the",
+     42.8,
+     42.98
+    ],
+    [
+     "division,",
+     42.98,
+     43.34
+    ],
+    [
+     "that",
+     43.68,
+     43.76
+    ],
+    [
+     "gradient",
+     43.76,
+     44.12
+    ],
+    [
+     "is",
+     44.12,
+     44.48
+    ],
+    [
+     "almost",
+     44.48,
+     44.78
+    ],
+    [
+     "600",
+     44.78,
+     45.26
+    ],
+    [
+     "times",
+     45.26,
+     45.92
+    ],
+    [
+     "smaller.",
+     45.92,
+     46.3
+    ]
+   ]
+  },
+  {
+   "id": "L10",
+   "t0": 47.4,
+   "t1": 50.039,
+   "text": "That's why it's called scaled dot-product attention.",
+   "sub": "That's why it's called scaled dot-product attention.",
+   "words": [
+    [
+     "That's",
+     47.4,
+     47.62
+    ],
+    [
+     "why",
+     47.62,
+     47.78
+    ],
+    [
+     "it's",
+     47.78,
+     48.0
+    ],
+    [
+     "called",
+     48.0,
+     48.18
+    ],
+    [
+     "Scaled",
+     48.18,
+     48.66
+    ],
+    [
+     "Dot",
+     48.66,
+     48.94
+    ],
+    [
+     "Product",
+     48.94,
+     49.18
+    ],
+    [
+     "Attention.",
+     49.18,
+     49.62
+    ]
+   ]
+  }
+ ],
+ "cues": [
+  {
+   "t0": 0.55,
+   "t1": 2.83,
+   "text": "Delete one division from this formula,"
+  },
+  {
+   "t0": 2.87,
+   "t1": 5.36,
+   "text": "and a Transformer can barely learn."
+  },
+  {
+   "t0": 5.4,
+   "t1": 7.84,
+   "text": "An attention score is a dot product."
+  },
+  {
+   "t0": 7.88,
+   "t1": 11.36,
+   "text": "Multiply d pairs of numbers, then add them up."
+  },
+  {
+   "t0": 12.0,
+   "t1": 15.976,
+   "text": "Each product has variance 1, so the sum has variance d."
+  },
+  {
+   "t0": 16.2,
+   "t1": 20.96,
+   "text": "At d = 64, scores swing by about ±8."
+  },
+  {
+   "t0": 21.0,
+   "t1": 23.74,
+   "text": "Softmax turns a gap that big into a near-certain choice."
+  },
+  {
+   "t0": 23.78,
+   "t1": 27.682,
+   "text": "One token takes almost all the weight."
+  },
+  {
+   "t0": 28.8,
+   "t1": 30.84,
+   "text": "But learning needs the slope of this curve."
+  },
+  {
+   "t0": 30.88,
+   "t1": 32.68,
+   "text": "Out here, it's flat."
+  },
+  {
+   "t0": 33.0,
+   "t1": 36.364,
+   "text": "Divide by √d. Here, that's 8."
+  },
+  {
+   "t0": 36.6,
+   "t1": 38.16,
+   "text": "The variance is back to 1,"
+  },
+  {
+   "t0": 38.2,
+   "t1": 42.012,
+   "text": "the scores land on the steep part, and the gradient flows."
+  },
+  {
+   "t0": 42.6,
+   "t1": 47.26,
+   "text": "Without it, the gradient is ~586× smaller."
+  },
+  {
+   "t0": 47.4,
+   "t1": 50.639,
+   "text": "That's why it's called scaled dot-product attention."
+  }
+ ]
+}
