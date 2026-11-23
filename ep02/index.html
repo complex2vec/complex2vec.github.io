@@ -22,11 +22,11 @@ body.fit canvas { cursor: pointer; }
 #play a { font: 500 clamp(12px, 1.7vh, 17px) JBM, monospace; color: #8DFFB0; background: #010402e6; padding: .7vh 1.6vh; border-radius: 999px; }
 #ui { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(92vw, 52vh); box-sizing: border-box;
   padding: 1.4vh 2vh; border: 1px solid #8DFFB044; border-radius: 1vh; background: #010402dd;
-  font: 500 clamp(12px, 1.7vh, 18px) JBM, monospace; color: #8DFFB0; display: grid; gap: 1vh; }
+  font: 500 clamp(12px, 1.7vh, 18px) JBM, monospace; color: #8DFFB0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1vh; }
 #ui[hidden] { display: none; }
 #ui label { display: flex; align-items: center; gap: 1.2vh; }
 #ui select { flex: 1; min-width: 0; font: inherit; color: #E6FFEC; background: #0B2412; border: 1px solid #8DFFB066; border-radius: .6vh; padding: .4vh .6vh; }
-#ui input[type=range] { flex: 1; accent-color: #4DFF88; }
+#ui input[type=range] { flex: 1; min-width: 0; accent-color: #4DFF88; }
 #ui input[type=checkbox] { accent-color: #FFB547; width: 2vh; height: 2vh; }
 #ui .v { min-width: 4ch; text-align: right; color: #E6FFEC; }
 #ui a { color: #8DFFB0; opacity: .7; }
