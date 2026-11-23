@@ -26,8 +26,9 @@ body.fit #film { transform-origin: center; flex: none; }
 #status { position: absolute; left: 72px; right: 72px; top: 214px; font: 600 30px JBM; color: var(--hot); white-space: nowrap; }
 #status b { color: var(--red); } #status em { font-style: normal; color: var(--beam); }
 #scores { position: absolute; left: 72px; top: 278px; width: 440px; display: grid; gap: 14px; }
-.sc { display: grid; grid-template-columns: 104px 1fr 76px; align-items: center; gap: 12px; font: 600 24px JBM; }
-.sc span { color: var(--dim); } .sc .tr { height: 16px; background: #8DFFB01a; border-radius: 8px; position: relative; overflow: hidden; }
+.sc { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 16px; font: 700 44px JBM; margin-top: 10px; }
+#scores .sub { font: 500 21px JBM; color: var(--dim); }
+.sc span { color: var(--dim); } .sc .tr { height: 28px; background: #8DFFB01a; border-radius: 8px; position: relative; overflow: hidden; }
 .sc .tr i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--beam); border-radius: 8px; box-shadow: 0 0 12px #4DFF8888; }
 .sc b { text-align: right; color: var(--hot); } .sc.low .tr i { background: var(--red); box-shadow: 0 0 12px #FF5C8A88; } .sc.low b { color: var(--red); }
 #scores .hd, #ans .hd { font: 500 19px JBM; color: var(--dim); letter-spacing: .08em; margin-bottom: -4px; }
@@ -52,6 +53,7 @@ body.fit #film { transform-origin: center; flex: none; }
 .lbl.head { color: var(--cyan); font-size: 20px; }
 .lbl.att { color: var(--cyan); font-size: 22px; background: #010402d9; padding: 1px 8px; border-radius: 4px; }
 .lbl.att i { color: var(--hot); font-style: normal; }
+.lbl.att .ctx { color: var(--dim); font-size: 19px; }
 .lbl.card, .lbl.pred { display: none; }
 .lbl.mtag { font: 700 32px JBM, monospace; padding: 6px 18px; border-radius: 10px; letter-spacing: .06em; text-shadow: none; }
 .lbl.mtag.warn { color: #010402; background: var(--amber); box-shadow: 0 0 24px #FFB547aa; }
@@ -84,7 +86,7 @@ body.fit #film { transform-origin: center; flex: none; }
   <div id="chips"><div class="chip">1 HEAD</div><div class="chip">2 FEED-FWD</div><div class="chip">3 RESIDUAL</div><div class="chip">4 WEIGHTS</div></div>
   <div id="prog"><i></i></div>
   <div id="status"></div>
-  <div id="scores"><div class="hd">TEST SCORE · 136 SENTENCES</div></div>
+  <div id="scores"><div class="hd">NAME TEST · 48 QUESTIONS</div><div class="sub">like “who am i ?” · right answers</div></div>
   <div id="ans"><div class="hd">NEXT WORD</div><div class="q"></div></div>
   <div id="stage"></div>
   <div id="flash"></div>
@@ -172,8 +174,8 @@ function camAt(t) {
 }
 
 // ── HUD ──
-const SC = ['capital', 'name', 'agree'];
-$('scores').insertAdjacentHTML('beforeend', SC.map(k => `<div class="sc" id="sc-${k}"><span>${k}</span><div class="tr"><i></i></div><b></b></div>`).join(''));
+const SC = ['name'];   // only the test that matches the film's one sentence
+$('scores').insertAdjacentHTML('beforeend', SC.map(k => `<div class="sc" id="sc-${k}"><div class="tr"><i></i></div><b></b></div>`).join(''));
 for (let i = 0; i < 3; i++) $('ans').insertAdjacentHTML('beforeend', '<div class="row"><span></span><i></i><em></em></div>');
 const chips = [...document.querySelectorAll('.chip')], BREAKS = [M.b1, M.b2, M.b3, M.b4, M.cta];
 const pct = p => (p * 100).toFixed(p > .995 || p < .0005 ? 0 : 1) + '%';

@@ -27,8 +27,8 @@
   "cut": 36.74,
   "highway": 37.64,
   "babbles": 40.86,
-  "collapses": 41.76,
-  "b3end": 42.664,
+  "collapses": 41.68,
+  "b3end": 42.564,
   "b4": 43.8,
   "random": 45.48,
   "twelve": 48.5,
@@ -636,9 +636,9 @@
   {
    "id": "L10",
    "t0": 40.8,
-   "t1": 42.664,
-   "text": "It babbles. Every test collapses.",
-   "sub": "It babbles. Every test collapses.",
+   "t1": 42.564,
+   "text": "It babbles. The score collapses.",
+   "sub": "It babbles. The score collapses.",
    "words": [
     [
      "It",
@@ -646,24 +646,24 @@
      40.86
     ],
     [
-     "babbles",
+     "babbles,",
      40.86,
-     41.22
+     41.28
     ],
     [
-     "every",
-     41.22,
-     41.46
+     "the",
+     41.4,
+     41.48
     ],
     [
-     "test",
-     41.46,
-     41.76
+     "score",
+     41.48,
+     41.68
     ],
     [
      "collapses.",
-     41.76,
-     42.2
+     41.68,
+     42.14
     ]
    ]
   },
@@ -1452,9 +1452,9 @@
   },
   {
    "t0": 40.8,
-   "text": "It babbles. Every test collapses.",
+   "text": "It babbles. The score collapses.",
    "line": "L10",
-   "t1": 43.164,
+   "t1": 43.064,
    "w": [
     [
      "It",
@@ -1462,19 +1462,19 @@
     ],
     [
      "babbles.",
-     40.885
+     40.88
     ],
     [
-     "Every",
-     41.139
+     "The",
+     41.12
     ],
     [
-     "test",
-     41.308
+     "score",
+     41.227
     ],
     [
      "collapses.",
-     41.449
+     41.387
     ]
    ]
   },

@@ -281,8 +281,12 @@ export class Scene3D {
       this.mesh(dg, this.mat(COL.cyan, .8), [X(t), yb, z]); this.mesh(dg, this.mat(t === focus ? COL.hot : COL.cyan, .8), [X(t), yt, z]);
     });
     const r = H.att[focus]; let best = 0; r.forEach((v, i) => { if (v > r[best]) best = i; });
-    if (j === 0 || this.sel({ kind: 'head', b, j }) || this.sel({ kind: 'attn', b }))
-      this.label(`H${j + 1} · ${words[focus]} → ${words[best]} <i>${r[best].toFixed(2)}</i>`, [X(focus), yt + .32 + j * .42, z], 'att');
+    if (j === 0 || this.sel({ kind: 'head', b, j }) || this.sel({ kind: 'attn', b })) {
+      // "looks at", not "→": this is where the token reads from, not the answer. A repeated word gets its context.
+      const dup = words.filter(x => x === words[best]).length > 1;
+      const ctx = dup ? ` <span class=ctx>(in “${words.slice(Math.max(0, best - 1), best + 2).join(' ')}”)</span>` : '';
+      this.label(`H${j + 1} · “${words[focus]}” looks at “${words[best]}”${ctx} <i>${r[best].toFixed(2)}</i>`, [Math.max(X(0) + 2.5, X(focus) - 4.4), yt + .34 + j * .48, z], 'att');
+    }
   }
 
   vectorStrips(tr, resY, X, d, focus) {
