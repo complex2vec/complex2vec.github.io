@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The whole Transformer</title>
+<style>
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText.ttf); font-weight: 400 700; }
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText-Italic.ttf); font-style: italic; font-weight: 400 700; }
+@font-face { font-family: JBM; src: url(fonts/JetBrainsMono.ttf); font-weight: 100 800; }
+html, body { margin: 0; background: #010402; overflow: hidden; }
+canvas { display: block; }
+body.lab, body.fit { height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; }
+body.lab canvas, body.fit canvas { width: min(100vw, calc(100vh * 9 / 16)); width: min(100vw, calc(100dvh * 9 / 16)); height: auto; }   /* fit 9:16 inside any screen, never stretched */
+body.lab canvas { touch-action: none; cursor: pointer; }
+body.fit canvas { cursor: pointer; }
+#play { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1.6vh; text-align: center; }
+#play[hidden] { display: none; }
+#play button { font: 600 clamp(15px, 2.2vh, 22px) JBM, monospace; color: #010402; background: #4DFF88; border: 0; border-radius: 1.2vh;
+  padding: 1.6vh 3vh; box-shadow: 0 0 3vh #4DFF8866; cursor: pointer; }
+#play button:focus-visible { outline: 2px solid #E6FFEC; outline-offset: 3px; }
+#play a { font: 500 clamp(12px, 1.7vh, 17px) JBM, monospace; color: #8DFFB0; background: #010402e6; padding: .7vh 1.6vh; border-radius: 999px; }
+#ui { position: fixed; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(92vw, 52vh); box-sizing: border-box;
+  padding: 1.4vh 2vh; border: 1px solid #8DFFB044; border-radius: 1vh; background: #010402dd;
+  font: 500 clamp(12px, 1.7vh, 18px) JBM, monospace; color: #8DFFB0; display: grid; gap: 1vh; }
+#ui[hidden] { display: none; }
+#ui label { display: flex; align-items: center; gap: 1.2vh; }
+#ui select { flex: 1; min-width: 0; font: inherit; color: #E6FFEC; background: #0B2412; border: 1px solid #8DFFB066; border-radius: .6vh; padding: .4vh .6vh; }
+#ui input[type=range] { flex: 1; accent-color: #4DFF88; }
+#ui input[type=checkbox] { accent-color: #FFB547; width: 2vh; height: 2vh; }
+#ui .v { min-width: 4ch; text-align: right; color: #E6FFEC; }
+#ui a { color: #8DFFB0; opacity: .7; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div id="play" hidden><button id="playBtn" type="button">▶ Play with sound</button><a href="../">more episodes and labs →</a></div>
+<script>
+'use strict';
+// ───────────────────────── constants and helpers ─────────────────────────
+const W = 1080, H = 1920, QS = new URLSearchParams(location.search), LAB = QS.has('lab');
+const COL = { bg: '#010402', amb: '#0B2412', beam: '#4DFF88', ui: '#8DFFB0', hot: '#E6FFEC', amber: '#FFB547' };
+const G = { x0: 60, y0: 520, x1: 1020, y1: 1288, cx: 540, cy: 904 };          // the graticule on the glass (10 × 8 div of 96 px)
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), lerp = (a, b, u) => a + (b - a) * u;
+const seg = (t, a, b) => b > a ? clamp((t - a) / (b - a)) : (t >= a ? 1 : 0);
+const ss = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const eio = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eo = x => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const bo = x => { x = clamp(x); const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };   // back-out: a small overshoot
+const flash = (t, t0, d = .35) => t >= t0 ? clamp(1 - (t - t0) / d) : 0;
+const F = { mono: (px, w = 500) => `${w} ${px}px JBM`, serif: (px, w = 400) => `${w} ${px}px STIX`, ital: (px, w = 400) => `italic ${w} ${px}px STIX` };
+const fmtN = n => Math.round(n).toLocaleString('en-US');
+
+// ───────────────────────── canvases: four light channels + glow ─────────────────────────
+const X = document.getElementById('c').getContext('2d');
+function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+const [cBeam, BEAM] = mk(W, H), [cUi, UI] = mk(W, H), [cHot, HOT] = mk(W, H), [cAmb, AMB] = mk(W, H);
+const [cGlow, GLOW] = mk(W / 2, H / 2);
+const LEVELS = [[4, 1.2, .55], [8, 2.0, .45], [16, 2.6, .32], [32, 3.0, .22]].map(([ds, b, w]) => { const [c, x] = mk(W / ds, H / ds); return { c, x, b, w }; });
+const [cBg, BG] = mk(W, H), [cVig, VIG] = mk(W, H);
+(function screen() {
+  BG.fillStyle = COL.bg; BG.fillRect(0, 0, W, H);
+  let g = BG.createRadialGradient(540, 900, 0, 540, 900, 1250); g.addColorStop(0, 'rgba(11,36,18,.62)'); g.addColorStop(1, 'rgba(11,36,18,0)');
+  BG.fillStyle = g; BG.fillRect(0, 0, W, H);
+  g = VIG.createRadialGradient(540, 960, 520, 540, 960, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.55)');
+  VIG.fillStyle = g; VIG.fillRect(0, 0, W, H);
+})();
+function clearLayers() { for (const c of [BEAM, UI, HOT, AMB]) { c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.clearRect(0, 0, W, H); } }
+function compose() {
+  X.globalCompositeOperation = 'source-over'; X.globalAlpha = 1; X.drawImage(cBg, 0, 0);
+  GLOW.globalCompositeOperation = 'source-over'; GLOW.globalAlpha = 1; GLOW.clearRect(0, 0, W / 2, H / 2);
+  GLOW.drawImage(cBeam, 0, 0, W / 2, H / 2); GLOW.globalCompositeOperation = 'lighter';
+  GLOW.globalAlpha = 1.25; GLOW.drawImage(cHot, 0, 0, W / 2, H / 2); GLOW.globalAlpha = .9; GLOW.drawImage(cAmb, 0, 0, W / 2, H / 2);
+  GLOW.globalAlpha = .2; GLOW.drawImage(cUi, 0, 0, W / 2, H / 2); GLOW.globalAlpha = 1;
+  X.globalCompositeOperation = 'lighter';
+  for (const L of LEVELS) {
+    L.x.clearRect(0, 0, L.c.width, L.c.height); L.x.filter = `blur(${L.b}px)`; L.x.drawImage(cGlow, 0, 0, L.c.width, L.c.height); L.x.filter = 'none';
+    X.globalAlpha = L.w; X.drawImage(L.c, 0, 0, W, H);
+  }
+  X.globalAlpha = 1; X.drawImage(cBeam, 0, 0); X.drawImage(cUi, 0, 0); X.drawImage(cHot, 0, 0); X.drawImage(cAmb, 0, 0);
+  X.globalCompositeOperation = 'source-over'; X.drawImage(cVig, 0, 0);
+}
+
+// ───────────────────────── drawing primitives ─────────────────────────
+function line(c, pts, color, a, w, dash) {
+  if (pts.length < 2 || a <= 0) return;
+  c.save(); c.globalAlpha = clamp(a); c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; if (dash) c.setLineDash(dash);
+  c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.stroke(); c.restore();
+}
+function dot(c, x, y, r, color, a = 1) { if (a <= 0 || r <= 0) return; c.save(); c.globalAlpha = clamp(a); c.fillStyle = color; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); }
+function ring(c, x, y, r, color, a = 1, w = 3) { if (a <= 0) return; c.save(); c.globalAlpha = clamp(a); c.strokeStyle = color; c.lineWidth = w; c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); c.restore(); }
+function text(c, s, x, y, font, color, a = 1, align = 'left') { if (a <= 0) return; c.save(); c.globalAlpha = clamp(a); c.font = font; c.fillStyle = color; c.textAlign = align; c.fillText(s, x, y); c.restore(); }
+function tw(s, font) { X.font = font; return X.measureText(s).width; }
+function rect(c, x0, y0, x1, y1, color, a, w = 1.6) { line(c, [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], color, a, w); }
+// text written by the beam: a clip sweeps left → right with a white-hot writing point, then a flash
+function written(t, t0, t1, s, x, y, font, color = COL.ui, a = 1, layer = UI) {
+  if (t < t0 || a <= 0) return 0;
+  const w = tw(s, font), p = seg(t, t0, t1), px = parseFloat(font.match(/(\d+)px/)[1]);
+  layer.save(); layer.beginPath(); layer.rect(x - 4, y - px * 1.2, w * p + 6, px * 1.6); layer.clip(); text(layer, s, x, y, font, color, a); layer.restore();
+  if (p < 1) dot(HOT, x + w * p, y - px * .32 + Math.sin(t * 90) * px * .18, 4.5, COL.hot, a);
+  const f = flash(t, t1, .4); if (f > 0) text(HOT, s, x, y, font, COL.hot, f * .8 * a);
+  return p;
+}
+function graticule(a) {
+  if (a <= 0) return;
+  for (let i = 1; i < 10; i++) { const x = G.x0 + 96 * i; line(UI, [[x, G.y0], [x, G.y1]], COL.ui, .16 * a, 1.2, [2, 7]); }
+  for (let i = 1; i < 8; i++) { const y = G.y0 + 96 * i; line(UI, [[G.x0, y], [G.x1, y]], COL.ui, .16 * a, 1.2, [2, 7]); }
+  rect(UI, G.x0, G.y0, G.x1, G.y1, COL.ui, .42 * a);
+}
+
+// ───────────────────────── EP00 · the whole Transformer, measured on a real LLM ─────────────────────────
+// Colour = role, kept for the whole film: green = tokens and the residual stream, cyan = attention, amber = feed-forward, white-hot = output.
+const CY = '#5CE1FF';
+const LX = [320, 455, 590, 725, 860], LT = 560, LB = 1220, PILL_Y = 1272;        // five lanes of the residual stream
+const TB = { x0: 84, y0: 562, cols: 3, rows: 18, s: 37 };                         // the embedding table, drawn as cells
+const ROWS = [4, 10, 2, 13, 3];                                                    // rows lit for The, capital, of, France, is (ordered like the ids, not to scale)
+let DATA = null, TL = null, TEXTSET = [], RO = null;
+const pct = (v, d = 1) => (100 * v).toFixed(d) + '%';
+const vis = s => s.replace(/\n/g, '\\n');                                         // JetBrains Mono has no ⏎: show a newline token as \n
+
+function pill(L, s, cx, y, font, color, a = 1, padX = 14, h = 46, w0) {
+  if (a <= 0) return 0;
+  const w = w0 ?? tw(s, font) + padX * 2;
+  L.save(); L.globalAlpha = clamp(a) * .9; L.strokeStyle = color; L.lineWidth = 2.5; L.beginPath(); L.roundRect(cx - w / 2, y - h * .7, w, h, h / 2); L.stroke(); L.restore();
+  text(L, s, cx, y, font, color, a, 'center'); return w;
+}
+function rbox(L, x0, y0, x1, y1, color, a, lw = 3, r = 14) { if (a <= 0) return; L.save(); L.globalAlpha = clamp(a); L.strokeStyle = color; L.lineWidth = lw; L.beginPath(); L.roundRect(x0, y0, x1 - x0, y1 - y0, r); L.stroke(); L.restore(); }
+function fillRect(L, x0, y0, x1, y1, color, a) { if (a <= 0) return; L.save(); L.globalAlpha = clamp(a); L.fillStyle = color; L.fillRect(x0, y0, x1 - x0, y1 - y0); L.restore(); }
+function curve(L, x0, y0, cx, cy, x1, y1, color, a, w, p = 1) {
+  const pts = []; for (let i = 0; i <= 40 * p; i++) { const u = i / 40; pts.push([(1 - u) ** 2 * x0 + 2 * (1 - u) * u * cx + u * u * x1, (1 - u) ** 2 * y0 + 2 * (1 - u) * u * cy + u * u * y1]); }
+  line(L, pts, color, a, w);
+}
+function cellGrid(L, x0, y0, cols, rows, s, color, a, lit) {
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const on = lit && lit.has(r);
+    L.save(); L.globalAlpha = clamp(a) * (on ? 1 : .28 + .32 * (((r * 7 + c * 3) % 5) / 4)); L.strokeStyle = on ? COL.hot : color; L.lineWidth = on ? 2.4 : 1.5;
+    L.beginPath(); L.roundRect(x0 + c * s, y0 + r * s, s - 6, s - 6, 5); L.stroke(); L.restore();
+  }
+}
+const rowY = r => TB.y0 + r * TB.s + (TB.s - 6) / 2;
+
+// ───────────────────────── HUD: stop chips, progress, formula anchor, readout, karaoke caption ─────────────────────────
+const STOPS = ['1 TOKENS', '2 VECTORS', '3 BLOCK ×24', '4 NEXT WORD'];
+function chipTimes() { const M = TL.marks; return [0, 1, 2, 3].map(k => M.road + .35 + .5 * k); }
+function activeStop(t) {
+  const M = TL.marks;
+  if (t >= M.recap) return [M.rTok, M.rVec, M.rBlk, M.rWord].filter(x => t >= x).length - 1;
+  if (t >= M.stop4) return 3; if (t >= M.stop3) return 2; if (t >= M.stop2) return 1; if (t >= M.stop1) return 0;
+  if (t >= M.road) return chipTimes().filter(x => t >= x).length - 1;
+  return -1;
+}
+function chips(t) {
+  const M = TL.marks, ct = chipTimes(), act = activeStop(t), all = t >= M.recap;
+  let x = 72; const f = F.mono(24, 700);
+  STOPS.forEach((s, k) => {
+    const w = tw(s, f) + 32, a = seg(t, ct[k], ct[k] + .2);
+    const on = all ? k <= act : k === act;
+    if (a > 0) { if (on) pill(AMB, s, x + w / 2, 214, f, COL.amber, a, 16, 44, w); else pill(UI, s, x + w / 2, 214, f, COL.ui, .55 * a, 16, 44, w); }
+    const fl = flash(t, all ? [M.rTok, M.rVec, M.rBlk, M.rWord][k] : [M.stop1, M.stop2, M.stop3, M.stop4][k], .5);
+    if (fl > 0 && a > 0) text(HOT, s, x + w / 2, 214, f, COL.hot, fl * .8, 'center');
+    x += w + 10;
+  });
+  line(UI, [[72, 252], [1008, 252]], COL.ui, .22, 4);
+  line(HOT, [[72, 252], [72 + 936 * clamp(t / TL.dur), 252]], COL.hot, .85, 4);
+}
+function anchor(t) {
+  const M = TL.marks;
+  const S = [
+    [0, [['one block of a real LLM: Qwen2.5-0.5B', F.mono(30, 600), COL.ui]]],
+    [M.road, [['text → tokens → vectors → 24 blocks → next word', F.mono(27, 600), COL.ui]]],
+    [M.stop1, [['text  →  token ids', F.ital(48), COL.ui]]],
+    [M.stop2, [['x = E[id]', F.ital(48), COL.ui], ['E: 151,936 rows × 896', F.mono(30), COL.ui]]],
+    [M.stop3, [['x ← x + Attn(Norm(x))', F.ital(48), CY], ['x ← x + FFN(Norm(x))', F.ital(48), COL.amber]]],
+    [M.stop4, [['p = softmax(E · x)', F.ital(48), COL.hot]]],
+    [M.strange, [['guess after block k = softmax(E · Norm(x))', F.ital(40), COL.hot]]],
+    [M.recap, [['text → tokens → vectors → 24 blocks → next word', F.mono(27, 600), COL.ui]]],
+  ];
+  let k = 0; for (let i = 0; i < S.length; i++) if (t >= S[i][0]) k = i;
+  const [t0, rows] = S[k];
+  rows.forEach(([s, f, c], i) => {
+    const y = 336 + i * 60, L = c === COL.amber ? AMB : UI;
+    written(t, t0 + .05 + i * .25, t0 + .65 + i * .25, s, 72, y, f, c, 1, L);
+  });
+  TEXTSET.push({ id: 'anchor', text: rows.map(r => r[0]).join(' / '), x0: 72, y0: 296, x1: 1000, y1: 420, pass: true });
+}
+function readout(t) {
+  if (!RO) return;
+  const [s, c, f0] = RO, L = c === 'amber' ? AMB : UI, col = c === 'amber' ? COL.amber : c === 'cy' ? CY : c === 'hot' ? COL.hot : COL.ui;
+  text(L, s, 72, 458, F.mono(30, 600), col, .95);
+  if (f0 != null) { const f = flash(t, f0, .5); if (f > 0) text(HOT, s, 72, 458, F.mono(30, 600), COL.hot, f * .7); }
+  TEXTSET.push({ id: 'readout', text: s, x0: 72, y0: 430, x1: 72 + tw(s, F.mono(30, 600)), y1: 466 });
+}
+function cueAt(t) { for (const c of TL.cues) if (t >= c.t0 && t < c.t1) return [c, clamp(Math.min((t - c.t0) / .14, (c.t1 - t) / .14))]; return [null, 0]; }
+function caption(t) {
+  const [c, a] = cueAt(t); if (!c || a <= 0) return;
+  const f = F.serif(50, 600), y0 = 1418, lh = 62, maxw = 900;
+  let cur = -1; c.w.forEach(([, wt], i) => { if (t >= wt) cur = i; });
+  let x = 98, y = y0, n = 1;
+  const pos = c.w.map(([s]) => { const ww = tw(s, f), sp = tw(' ', f); if (x + ww > 98 + maxw && x > 98) { x = 98; y += lh; n++; } const p = [x, y]; x += ww + sp; return p; });
+  line(UI, [[74, y0 - 42], [74, y0 + (n - 1) * lh + 12]], COL.ui, .8 * a, 3);
+  c.w.forEach(([s], i) => {
+    const [px, py] = pos[i];
+    if (i === cur) text(AMB, s, px, py, f, COL.amber, a); else text(UI, s, px, py, f, COL.ui, a * (i < cur ? 1 : .38));
+  });
+  TEXTSET.push({ id: 'cap', text: c.text, x0: 74, y0: y0 - 42, x1: 1000, y1: y0 + (n - 1) * lh + 14 });
+}
+
+// ───────────────────────── scene: the hook, 1.8M vs 13.1M ─────────────────────────
+function hookScene(t, a) {
+  if (a <= 0) return; const M = TL.marks, P = DATA.params, base = 1180, H = 560;
+  const ha = eo(seg(t, M.attnBar + .2, M.attnBar + .8)) * H * P.attn / P.ffn, hf = eo(seg(t, M.ffnBar, M.ffnBar + 1.1)) * H;
+  const bar = (x0, x1, h, c, L, name, n, t0) => {
+    const g = seg(t, t0, t0 + .3); if (g <= 0) return;
+    fillRect(L, x0, base - h, x1, base, c, .28 * a); rbox(L, x0, base - h, x1, base, c, a * g, 3, 8);
+    text(L, name, (x0 + x1) / 2, base - h - 62, F.mono(30, 700), c, a * g, 'center');
+    text(L, fmtN(n * clamp(h / Math.max(1e-6, (n === P.ffn ? H : H * P.attn / P.ffn)))), (x0 + x1) / 2, base - h - 22, F.mono(28), c, a * g, 'center');
+  };
+  line(UI, [[160, base], [920, base]], COL.ui, .5 * a, 2);
+  text(UI, 'weights in one block', 540, base + 50, F.mono(28), COL.ui, .75 * a, 'center');
+  bar(170, 370, ha, CY, UI, 'attention', P.attn, M.attnBar + .2);
+  bar(450, 650, hf, COL.amber, AMB, 'feed-forward', P.ffn, M.ffnBar);
+  const s = seg(t, M.seven - .1, M.seven + .2);
+  if (s > 0) {
+    line(AMB, [[670, base - H * P.attn / P.ffn], [700, base - H * P.attn / P.ffn], [700, base - H], [670, base - H]], COL.amber, a * s, 3);
+    text(AMB, '×' + (P.ffn / P.attn).toFixed(1), 1000, base - H / 2 + 40, F.mono(120, 700), COL.amber, a * s, 'right');
+    const f = flash(t, M.seven, .5); if (f > 0) text(HOT, '×' + (P.ffn / P.attn).toFixed(1), 1000, base - H / 2 + 40, F.mono(120, 700), COL.hot, f * a, 'right');
+    TEXTSET.push({ id: 'x7', text: '×7.1', x0: 760, y0: base - H / 2 - 50, x1: 940, y1: base - H / 2 + 50 });
+  }
+}
+
+// ───────────────────────── schematic: the four stops (roadmap and recap) ─────────────────────────
+function schematic(t, a, times) {
+  if (a <= 0) return;
+  const y = [1180, 1000, 800, 610], on = times.map(x => seg(t, x, x + .25));
+  for (const [ya, yb] of [[1150, 1080], [935, 860], [740, 640]]) line(UI, [[540, ya], [540, yb]], COL.ui, .4 * a, 2);
+  for (let k = 0; k < 3; k++) { const yy = [1086, 866, 646][k]; line(UI, [[528, yy + 8], [540, yy - 6], [552, yy + 8]], COL.ui, .5 * a * on[k + 1], 2.5); }
+  pill(UI, 'The capital of France is', 540, y[0], F.mono(30, 600), COL.ui, a * (.3 + .7 * on[0]), 18, 52);
+  cellGrid(UI, 540 - 120, y[1] - 60, 8, 3, 30, COL.ui, a * (.3 + .7 * on[1]));
+  text(UI, '151,936 × 896', 540, y[1] + 70, F.mono(24), COL.ui, .8 * a * on[1], 'center');
+  rbox(BEAM, 380, y[2] - 70, 700, y[2] + 50, COL.ui, a * (.3 + .7 * on[2]), 2.5, 16);
+  text(UI, 'attention', 540, y[2] + 20, F.mono(30, 700), CY, a * (.3 + .7 * on[2]), 'center');
+  text(AMB, 'feed-forward', 540, y[2] - 26, F.mono(30, 700), COL.amber, a * (.3 + .7 * on[2]), 'center');
+  text(AMB, '×24', 720, y[2] - 6, F.mono(44, 700), COL.amber, a * on[2]);
+  pill(HOT, 'Paris  30%', 540, y[3], F.mono(32, 700), COL.hot, a * (.3 + .7 * on[3]), 20, 56);
+  times.forEach((x, k) => { const f = flash(t, x, .45); if (f > 0) dot(HOT, 540, y[k] - (k === 1 ? 10 : 0), 8, COL.hot, f * a); });
+}
+
+// ───────────────────────── stop 1–2: the sentence, its token pills and ids, the table, the vectors ─────────────────────────
+function pillsLayer(t, a) {
+  if (a <= 0) return; const M = TL.marks, toks = DATA.tokens.map(s => s.trim());
+  const fS = F.serif(72), sentence = DATA.prompt, sx = (W - tw(sentence, fS)) / 2;
+  if (t < M.five + .05) {                                         // the sentence, written by the beam
+    written(t, M.stop1 + .3, M.letters, sentence, sx, 880, fS, COL.ui, a);
+    TEXTSET.push({ id: 'sent', text: sentence, x0: sx, y0: 820, x1: sx + tw(sentence, fS), y1: 900 });
+    return;
+  }
+  let off = 0; const starts = DATA.tokens.map(s => { const st = off + tw(s.startsWith(' ') ? ' ' : '', fS); off += tw(s, fS); return [sx + st, sx + off]; });
+  const split = eio(seg(t, M.five, M.five + .55)), down = eio(seg(t, M.picks - .3, M.picks + .5));
+  toks.forEach((s, i) => {
+    const cx0 = (starts[i][0] + starts[i][1]) / 2, x = lerp(cx0, LX[i], split), y = lerp(880, PILL_Y, down);
+    const f = F.mono(lerp(32, 28, down), 600);
+    pill(UI, s, x, y, f, COL.ui, a, lerp(14, 12, down), lerp(54, 44, down));
+    const ia = seg(t, M.five + .4 + i * .08, M.five + .6 + i * .08) * (1 - seg(t, M.lanes + .3, M.lanes + .8));
+    text(UI, String(DATA.ids[i]), x, y + lerp(60, 42, down), F.mono(lerp(30, 22, down), 600), COL.amber, a * ia, 'center');
+  });
+  if (split >= 1) TEXTSET.push({ id: 'pills', text: toks.join(' '), x0: 260, y0: lerp(840, PILL_Y - 36, down), x1: 920, y1: lerp(950, PILL_Y + 46, down), pass: true });
+}
+function tableLayer(t, a, lit) {
+  if (a <= 0) return;
+  cellGrid(UI, TB.x0, TB.y0, TB.cols, TB.rows, TB.s, COL.ui, a, lit);
+  text(UI, 'E', TB.x0, TB.y0 - 46, F.ital(40), COL.ui, a); text(UI, '151,936 × 896', TB.x0 + 34, TB.y0 - 48, F.mono(22), COL.ui, .75 * a);
+}
+function stemsV(L, x, vals, a, k, color = COL.beam) {          // a vector drawn up a lane: 112 of its 896 numbers as horizontal stems
+  const n = 112, step = Math.floor(vals.length / n);
+  for (let j = 0; j < n; j++) { const v = vals[j * step], y = LB - (j / (n - 1)) * (LB - LT); line(L, [[x, y], [x + clamp(v * k, -46, 46), y]], color, a, 2); }
+}
+let EMB_K = 1;
+function vectorsScene(t, a) {
+  if (a <= 0) return; const M = TL.marks;
+  const ta = seg(t, M.stop2 + .1, M.stop2 + .6) * (1 - seg(t, M.lanes + .2, M.lanes + .8));
+  const lit = new Set(ROWS.filter((r, i) => t >= M.picks + .35 + i * .18));
+  tableLayer(t, a * ta, lit);
+  for (let i = 0; i < 5; i++) {                                   // each id points at its row
+    const t0 = M.picks + .35 + i * .18, p = seg(t, t0, t0 + .3), fade = 1 - seg(t, M.rows + .2, M.rows + .6);
+    if (p <= 0 || fade <= 0) continue;
+    const x0 = LX[i], y0 = PILL_Y - 34, x1 = TB.x0 + TB.cols * TB.s, y1 = rowY(ROWS[i]);
+    curve(UI, x0, y0, (x0 + x1) / 2, Math.min(y0, y1) - 40, x1, y1, COL.amber, .8 * a * fade, 2, p);
+    text(AMB, '#' + DATA.ids[i], x1 + 8, y1 - 8, F.mono(20, 600), COL.amber, .9 * a * fade * p);
+  }
+  // the rows slide out of the table and stand up as vectors on the five lanes
+  const out = eio(seg(t, M.rows, M.rows + 1.0)), va = a * (1 - seg(t, M.lanes + .4, M.lanes + 1.0));
+  if (out > 0) for (let i = 0; i < 5; i++) {
+    const x = lerp(TB.x0 + 60, LX[i], out), al = va * seg(t, M.rows + i * .06, M.rows + .3 + i * .06);
+    if (out < 1) { const y = rowY(ROWS[i]); line(BEAM, [[TB.x0, y], [TB.x0 + 110, y]].map(([px, py]) => [lerp(px, x, out), lerp(py, (LT + LB) / 2, out)]), COL.hot, al * (1 - out), 3); }
+    stemsV(BEAM, x, DATA.emb[i], al * out, EMB_K);
+  }
+  if (t >= M.n896 - .2) { const s = seg(t, M.n896 - .2, M.n896 + .1) * va; text(UI, '896 numbers each', LX[0] - 40, LT - 32, F.mono(26, 600), COL.ui, s); }
+}
+
+// ───────────────────────── the residual stream: five lanes ─────────────────────────
+function lanes(t, a, bright = 1) {
+  if (a <= 0) return;
+  for (let i = 0; i < 5; i++) {
+    line(BEAM, [[LX[i], LB], [LX[i], LT]], COL.beam, .75 * a * bright, 4);
+    for (let k = 0; k < 6; k++) { const y = LB - ((t * 140 + k * 113 + i * 47) % (LB - LT)); dot(HOT, LX[i], y, 3.5, COL.hot, .55 * a * bright); }
+  }
+}
+function plus(L, x, y, a, color = COL.hot) { if (a <= 0) return; ring(L, x, y, 14, color, a, 2.5); line(L, [[x - 8, y], [x + 8, y]], color, a, 2.5); line(L, [[x, y - 8], [x, y + 8]], color, a, 2.5); }
+function blockScene(t, a) {
+  if (a <= 0) return; const M = TL.marks;
+  const comp = seg(t, M.stack0, M.stack0 + .45), ba = a * (1 - comp);
+  // attention band, arcs from "is", the add back into the stream
+  const band = seg(t, M.attn, M.attn + .4) * ba;
+  if (band > 0) {
+    rbox(BEAM, 262, 1005, 918, 1085, CY, band, 3, 16);
+    text(UI, 'ATTENTION · 14 heads · 1.8M weights', 262, 1124, F.mono(24, 600), CY, band);
+    const w = DATA.attLast[0], g = seg(t, M.look, M.look + .7) * (1 - seg(t, M.added1 - .2, M.added1 + .3));
+    for (let j = 0; j < 4; j++) {
+      const hot = j === 3 && t >= M.france, wt = w[j];
+      curve(hot ? HOT : BEAM, LX[4], 1040, (LX[4] + LX[j]) / 2, 1030 - 70 - 300 * wt, LX[j], 1040, hot ? COL.hot : CY, band * g * (.35 + .65 * wt / .3), 2 + 12 * wt, g);
+      text(hot ? HOT : UI, wt.toFixed(2), LX[j] + 12, 1064, F.mono(hot ? 30 : 24, 700), hot ? COL.hot : CY, band * seg(t, M.look + .6, M.look + .9) * (1 - seg(t, M.added1 - .2, M.added1 + .3)));
+    }
+    const self = seg(t, M.look + .6, M.look + .9) * (1 - seg(t, M.added1 - .2, M.added1 + .3));
+    text(UI, 'self ' + w[4].toFixed(2), LX[4] + 12, 1064, F.mono(22, 600), CY, band * self);
+    if (t >= M.france) ring(AMB, LX[3], 1045, 26, COL.amber, band * (1 - seg(t, M.added1 - .2, M.added1 + .3)), 3);
+    for (let i = 0; i < 5; i++) { const p = seg(t, M.added1 + i * .05, M.added1 + .25 + i * .05); plus(UI, LX[i], 985, band * p, CY); if (flash(t, M.added1 + i * .05, .4) > 0) dot(HOT, LX[i], 985, 10, COL.hot, flash(t, M.added1 + i * .05, .4) * band); }
+  }
+  // feed-forward: each lane alone, 896 → 4,864 → 896
+  const fa = seg(t, M.ffn, M.ffn + .5) * ba;
+  if (fa > 0) {
+    const wd = lerp(14, 54, eio(seg(t, M.widen, M.widen + .8)));
+    for (let i = 0; i < 5; i++) {
+      const x = LX[i], s = seg(t, M.ffn + i * .08, M.ffn + .3 + i * .08);
+      const P = [[x - 14, 870], [x - wd, 815], [x - wd, 765], [x - 14, 710], [x + 14, 710], [x + wd, 765], [x + wd, 815], [x + 14, 870], [x - 14, 870]];
+      line(AMB, P, COL.amber, fa * s, 2.6);
+      plus(AMB, x, 688, fa * seg(t, M.added2 + i * .05, M.added2 + .25 + i * .05), COL.amber);
+    }
+    text(AMB, 'FEED-FORWARD · each token alone · 13.1M weights', 262, 650, F.mono(24, 600), COL.amber, fa);
+    const wl = seg(t, M.widen, M.widen + .4) * (1 - seg(t, M.added2, M.added2 + .3));
+    text(AMB, '896 → 4,864 → 896', 590, 935, F.mono(28, 700), COL.amber, fa * wl, 'center');
+  }
+  const ob = seg(t, M.oneblock, M.oneblock + .3) * ba;
+  if (ob > 0) { line(HOT, [[946, 640], [960, 640], [960, 1130], [946, 1130]], COL.hot, ob, 2.5); text(HOT, '1 block', 1004, 1172, F.mono(26, 700), COL.hot, ob, 'right'); }
+  // ×24: the block becomes one slab, and 24 slabs stack up the stream
+  if (t >= M.stack0) {
+    const n = Math.floor(1 + 23 * seg(t, M.stack0 + .35, M.stack1)), h = (LB - LT) / 24, sa = a * (1 - seg(t, M.stop4 - .3, M.stop4));
+    for (let k = 0; k < n; k++) {
+      const y1 = LB - k * h, y0 = y1 - h, fl = flash(t, M.stack0 + .35 + (M.stack1 - M.stack0 - .35) * k / 23, .3);
+      fillRect(UI, 262, y0 + h * .55, 918, y1 - 3, CY, .35 * sa); fillRect(AMB, 262, y0 + 3, 918, y0 + h * .5, COL.amber, .3 * sa);
+      if (fl > 0) line(HOT, [[262, y0 + h / 2], [918, y0 + h / 2]], COL.hot, fl * sa, 2);
+    }
+    const big = seg(t, M.stack0 + .2, M.stack0 + .5) * sa;
+    text(AMB, `×${n}`, 1000, 540, F.mono(64, 700), COL.amber, big * (t < M.weights ? 1 : 1 - seg(t, M.weights, M.weights + .4)), 'right');
+    return n;
+  }
+  return 0;
+}
+
+// ───────────────────────── where the weights live ─────────────────────────
+function weightsScene(t, a) {
+  if (a <= 0) return; const M = TL.marks, P = DATA.params, tot = P.total, L = DATA.layers;
+  const parts = [['table', P.embed, COL.ui, UI, M.wq], ['feed-forward', L * P.ffn, COL.amber, AMB, M.wt], ['attention', L * P.attn, CY, UI, M.wa]];
+  text(UI, 'where the 494M weights live', 96, 760, F.mono(30, 700), COL.ui, a);
+  let x = 96; const W0 = 888;
+  parts.forEach(([name, v, c, Ly, t0], i) => {
+    const w = W0 * v / tot, g = eo(seg(t, t0, t0 + .5));
+    fillRect(Ly, x, 830, x + (w - 6) * g, 910, c, .55 * a); rbox(Ly, x, 830, x + Math.max(8, (w - 6) * g), 910, c, a * seg(t, t0, t0 + .1), 2, 6);
+    const lab = `${name} ${pct(v / tot)}`, sub = (v / 1e6).toFixed(1) + 'M';
+    const la = a * seg(t, t0 + .3, t0 + .6);
+    if (i < 2) { text(Ly, lab, x + 4, 960, F.mono(28, 700), c, la); text(Ly, sub, x + 4, 998, F.mono(24), c, .8 * la); }
+    else { text(Ly, lab, 984, 800, F.mono(28, 700), c, la, 'right'); text(Ly, sub, 984, 960, F.mono(24), c, .8 * la, 'right'); }
+    x += w;
+  });
+  TEXTSET.push({ id: 'wbar', text: 'table / feed-forward / attention', x0: 96, y0: 730, x1: 984, y1: 1000, pass: true });
+}
+
+// ───────────────────────── stop 4: score every row, softmax, Paris ─────────────────────────
+function nextScene(t, a) {
+  if (a <= 0) return; const M = TL.marks;
+  tableLayer(t, a * seg(t, M.stop4 + .2, M.stop4 + .6) * (1 - .8 * seg(t, M.softmax, M.softmax + .4)), null);
+  // the last vector, laid flat across the top
+  const xa = seg(t, M.stop4 + .3, M.stop4 + .9) * a, v = DATA.xLast, n = 160, step = Math.floor(v.length / n);
+  const sorted = [...v].map(Math.abs).sort((p, q) => p - q), k = 40 / sorted[Math.floor(sorted.length * .98)];
+  for (let j = 0; j < n; j++) { const x = 300 + j * (660 / (n - 1)); line(BEAM, [[x, 640], [x, 640 - clamp(v[j * step] * k, -50, 50)]], COL.hot, xa * .85, 2); }
+  text(UI, '"is" after 24 blocks · 896 numbers', 300, 572, F.mono(24, 600), COL.ui, xa);
+  // the scan: every row of the table gets a score
+  const sc = seg(t, M.scored, M.everyrow + 1.4);
+  if (sc > 0 && sc < 1) { const y = TB.y0 + sc * TB.rows * TB.s; line(HOT, [[TB.x0 - 10, y], [TB.x0 + TB.cols * TB.s + 6, y]], COL.hot, a, 3); line(UI, [[TB.x0 + TB.cols * TB.s + 6, y], [300, 660]], COL.ui, .3 * a, 1.5, [4, 6]); }
+  // softmax: the top four of 151,936
+  const bars = DATA.next.slice(0, 4), g = eo(seg(t, M.softmax + .3, M.softmax + 1.2));
+  bars.forEach((b, i) => {
+    const y = 820 + i * 96, isP = i === 0, Ly = isP ? HOT : UI, c = isP ? COL.hot : COL.ui, la = a * seg(t, M.softmax + .2 + i * .1, M.softmax + .5 + i * .1);
+    text(Ly, '"' + vis(b.tok.replace(/^ /, '')) + '"', 420, y, F.mono(34, 700), c, la * (isP ? 1 : .8), 'right');
+    fillRect(Ly, 440, y - 30, 440 + 440 * b.p / bars[0].p * g, y + 4, c, (isP ? .7 : .35) * la);
+    text(Ly, pct(b.p), 452 + 440 * b.p / bars[0].p * g, y, F.mono(30, 700), c, la * g);
+  });
+  const pf = flash(t, M.paris, .6); if (pf > 0) fillRect(HOT, 440, 790, 880, 824, COL.hot, pf * .5 * a);
+  if (g > 0) TEXTSET.push({ id: 'bars', text: 'Paris 30.2%', x0: 100, y0: 780, x1: 960, y1: 1130, pass: true });
+}
+
+// ───────────────────────── the logit lens: P(Paris) after every block ─────────────────────────
+const LXp = k => 150 + k * (930 - 150) / 24, LYp = p => 1180 - p / .4 * 520;
+function lensScene(t, a) {
+  if (a <= 0) return; const M = TL.marks, lens = DATA.lens;
+  const ax = seg(t, M.strange + .2, M.strange + .8) * a;
+  line(UI, [[LXp(0), LYp(0)], [LXp(24) + 20, LYp(0)]], COL.ui, .6 * ax, 2); line(UI, [[LXp(0), LYp(0)], [LXp(0), LYp(.4) - 10]], COL.ui, .6 * ax, 2);
+  for (const p of [.1, .2, .3, .4]) { line(UI, [[LXp(0), LYp(p)], [LXp(24), LYp(p)]], COL.ui, .14 * ax, 1.2, [2, 7]); text(UI, Math.round(p * 100) + '%', LXp(0) - 12, LYp(p) + 9, F.mono(22), COL.ui, .7 * ax, 'right'); }
+  for (let k = 0; k <= 24; k++) { line(UI, [[LXp(k), LYp(0) - 6], [LXp(k), LYp(0) + 6]], COL.ui, .5 * ax, 1.5); if (k % 6 === 0) text(UI, String(k), LXp(k), LYp(0) + 40, F.mono(24), COL.ui, .8 * ax, 'center'); }
+  text(UI, 'block', LXp(12), LYp(0) + 78, F.mono(24), COL.ui, .6 * ax, 'center');
+  text(HOT, 'P(" Paris")', LXp(0) + 10, LYp(.4) - 22, F.mono(28, 700), COL.hot, ax);
+  // the beam: flat through block 21, then the jump
+  const kf = t < M.nowhere + .6 ? 21 * seg(t, M.lens0, M.nowhere + .6) : t < M.b22 ? 21 : 21 + 3 * seg(t, M.b22, M.b22 + 1.0);
+  if (t >= M.lens0) {
+    const pts = []; for (let k = 0; k <= Math.floor(kf); k++) pts.push([LXp(k), LYp(lens[k].paris)]);
+    const fr = kf - Math.floor(kf), k0 = Math.floor(kf); if (k0 < 24 && fr > 0) pts.push([LXp(k0 + fr), LYp(lerp(lens[k0].paris, lens[k0 + 1].paris, fr))]);
+    line(BEAM, pts, COL.hot, a, 3.2); pts.forEach(([x, y], i) => { if (i <= k0) dot(BEAM, x, y, 4.5, COL.hot, a * .9); });
+    const [hx, hy] = pts[pts.length - 1]; dot(HOT, hx, hy, 7, COL.hot, a);
+    const kk = Math.min(24, Math.round(kf)), r = lens[kk];
+    RO = [`block ${kk} · top guess "${vis(r.top)}" · Paris ${pct(r.paris, r.paris < .01 ? 2 : 1)}`, kk >= 22 ? 'hot' : '', null];
+  } else if (t >= M.guess) RO = ['the model\'s top guess, read after every block', '', M.guess];
+  const cu = seg(t, M.p28 - .1, M.p28 + .2) * a;
+  if (cu > 0) {
+    const x = LXp(22), y = LYp(lens[22].paris);
+    line(AMB, [[x, LYp(0)], [x, y - 20]], COL.amber, cu, 2.5, [6, 6]); ring(AMB, x, y, 14, COL.amber, cu, 3);
+    text(AMB, pct(lens[22].paris), x - 24, y - 26, F.mono(40, 700), COL.amber, cu, 'right');
+    TEXTSET.push({ id: 'p22', text: pct(lens[22].paris), x0: x - 180, y0: y - 66, x1: x - 20, y1: y - 16 });
+  }
+}
+
+// ───────────────────────── the end card: the series ─────────────────────────
+function ctaScene(t, a) {
+  if (a <= 0) return; const M = TL.marks;
+  text(UI, 'INSIDE THE TRANSFORMER', 96, 560, F.mono(30, 700), COL.ui, .75 * a);
+  const R = [['EP00', 'The whole Transformer', 'you are here', 'hot'], ['EP01', 'Why attention divides by √d', '', ''], ['EP02', 'Twelve heads, one price', '', ''], ['EP03', 'How attention knows word order', 'next', 'amber']];
+  R.forEach(([n, s, tag, c], i) => {
+    const y = 650 + i * 78, la = a * seg(t, M.cta + .1 + i * .15, M.cta + .4 + i * .15), Ly = c === 'amber' ? AMB : c === 'hot' ? HOT : UI, col = c === 'amber' ? COL.amber : c === 'hot' ? COL.hot : COL.ui;
+    text(Ly, n, 96, y, F.mono(30, 700), col, la); text(Ly, s, 210, y, F.serif(40), col, la * (c ? 1 : .8));
+    if (tag) text(Ly, tag, 984, y, F.mono(24, 600), col, la * .85, 'right');
+  });
+  const fo = written(t, M.follow, M.follow + .7, 'Follow to go deeper', 96, 1060, F.ital(76), COL.hot, a, HOT);
+  if (t >= M.follow + .9) written(t, M.follow + .9, M.follow + 1.8, 'Labs for every episode → link in bio', 96, 1150, F.mono(32, 600), COL.ui, a);
+  TEXTSET.push({ id: 'cta', text: 'series card', x0: 96, y0: 530, x1: 984, y1: 1170 });
+}
+
+// ───────────────────────── the film: render(t) ─────────────────────────
+function render(t) {
+  const M = TL.marks;
+  clearLayers(); TEXTSET = []; RO = null;
+  const tag = '@complex2vec · EP 00'; text(UI, tag, 72, 150, F.mono(26, 600), COL.ui, .5);
+  TEXTSET.push({ id: 'tag', text: tag, x0: 72, y0: 124, x1: 72 + tw(tag, F.mono(26, 600)), y1: 156, pass: true });
+  const pw = seg(t, 0, .3); graticule(.55 * ss(pw));
+  chips(t); anchor(t);
+  hookScene(t, 1 - seg(t, M.road - .7, M.road - .15));
+  schematic(t, seg(t, M.road, M.road + .35) * (1 - seg(t, M.stop1 - .4, M.stop1)), chipTimes());
+  const pl = t < M.stop1 ? 0 : 1 - seg(t, M.stop4 - .4, M.stop4);
+  if (t >= M.stop2 - .2 && t < M.lanes + 1.2) vectorsScene(t, 1);
+  const la = seg(t, M.lanes, M.lanes + .8) * (1 - seg(t, M.stop4 - .4, M.stop4)), dimW = 1 - .75 * seg(t, M.weights, M.weights + .4);
+  lanes(t, la * dimW, 1 + .8 * Math.max(flash(t, M.added1, .5), flash(t, M.added2, .5)));
+  pillsLayer(t, pl * (t >= M.weights ? dimW : 1));
+  let n = 0;
+  if (t >= M.stop3 - .2 && t < M.stop4) n = blockScene(t, dimW);
+  weightsScene(t, t < M.weights ? 0 : 1 - seg(t, M.stop4 - .4, M.stop4));
+  nextScene(t, t < M.stop4 ? 0 : 1 - seg(t, M.strange - .3, M.strange + .1));
+  lensScene(t, t < M.strange ? 0 : 1 - seg(t, M.recap - .3, M.recap));
+  schematic(t, seg(t, M.recap, M.recap + .3) * (1 - seg(t, M.cta - .3, M.cta)), [M.rTok, M.rVec, M.rBlk, M.rWord]);
+  ctaScene(t, seg(t, M.cta, M.cta + .3));
+
+  // readout line (one per moment)
+  if (!RO) {
+    if (t < M.road) RO = t >= M.seven ? ['per block: 13,074,432 vs 1,836,160', 'amber', M.seven] : null;
+    else if (t >= M.five && t < M.stop2) RO = ['5 tokens → 5 ids', '', M.five];
+    else if (t >= M.stop2 && t < M.lanes) RO = t >= M.quarter ? ['table = 136,134,656 weights = 27.6%', 'amber', M.quarter] : t >= M.picks ? ['each id picks one row of E', '', M.picks] : null;
+    else if (t >= M.lanes && t < M.stop3) RO = ['5 lanes × 896 numbers', '', M.lanes];
+    else if (t >= M.attn && t < M.ffn) RO = t >= M.look ? ['attention of "is" · block 1 · mean of 14 heads', 'cy', M.look] : null;
+    else if (t >= M.ffn && t < M.stack0) RO = ['896 → 4,864 → 896, per token', 'amber', M.widen];
+    else if (t >= M.stack0 && t < M.weights) RO = [`block ${n} of 24`, 'amber', null];
+    else if (t >= M.weights && t < M.stop4) RO = ['494,032,768 weights in all', '', M.weights];
+    else if (t >= M.scored && t < M.softmax) RO = [`rows scored: ${fmtN(DATA.vocab * clamp(seg(t, M.scored, M.everyrow + 1.4)))}`, '', null];
+    else if (t >= M.softmax && t < M.strange) RO = ['top 4 of 151,936', '', M.softmax];
+  }
+  readout(t);
+  caption(t);
+  compose();
+}
+
+// ───────────────────────── sound and cue events (exported by events.mjs) ─────────────────────────
+function events() {
+  const M = TL.marks, E = [];
+  const ev = (t, type, o = {}) => E.push({ t: +t.toFixed(3), type, ...o });
+  const ticks = (s, t0, t1, f, v = .5) => { const w = tw(s, f); let x = 0; for (const ch of s) { if (ch !== ' ') ev(t0 + (t1 - t0) * x / w, 'tick', { v }); x += tw(ch, f); } };
+  ev(0, 'relay');
+  ev(M.attnBar + .2, 'rise', { d: .6, f0: 300, f1: 420 }); ev(M.ffnBar, 'rise', { d: 1.1, f0: 200, f1: 900 }); ev(M.seven, 'lock');
+  chipTimes().forEach((x, k) => ev(x, 'chip', { k }));
+  ev(M.road, 'music_on');
+  for (const [x, k] of [[M.stop1, 0], [M.stop2, 1], [M.stop3, 2], [M.stop4, 3]]) ev(x, 'stop', { k });
+  ticks(DATA.prompt, M.stop1 + .3, M.letters, F.serif(72), .45);
+  ev(M.five, 'split'); for (let i = 0; i < 5; i++) ev(M.five + .4 + i * .08, 'blip', { f: 1800 + 200 * i, v: .5 });
+  for (let i = 0; i < 5; i++) ev(M.picks + .35 + i * .18, 'cursor', { f: 2000 + 150 * i });
+  ev(M.rows, 'whoosh', { d: 1.0 }); ev(M.n896, 'readout'); ev(M.quarter, 'readout');
+  ev(M.lanes, 'flow', { d: M.stop4 - M.lanes });
+  ev(M.attn, 'band'); for (let j = 0; j < 4; j++) ev(M.look + j * .12, 'blip', { f: 2600 - 200 * j, v: .45 }); ev(M.france, 'ping', { m: 81 });
+  for (let i = 0; i < 5; i++) ev(M.added1 + i * .05, 'add', { p: (i - 2) / 3 });
+  ev(M.ffn, 'band'); ev(M.widen, 'rise', { d: .8, f0: 300, f1: 700 }); ev(M.back, 'rise', { d: .5, f0: 700, f1: 300 });
+  for (let i = 0; i < 5; i++) ev(M.added2 + i * .05, 'add', { p: (i - 2) / 3 });
+  ev(M.oneblock, 'readout');
+  for (let k = 0; k < 24; k++) ev(M.stack0 + .35 + (M.stack1 - M.stack0 - .35) * k / 23, 'slab', { k });
+  ev(M.wq, 'seg', { m: 74 }); ev(M.wt, 'seg', { m: 77 }); ev(M.wa, 'seg', { m: 81 });
+  ev(M.scored, 'scan', { d: M.everyrow + 1.4 - M.scored });
+  ev(M.softmax + .3, 'rise', { d: .9, f0: 400, f1: 800 }); ev(M.paris, 'lock');
+  ev(M.strange, 'hush'); ev(M.lens0, 'trace', { d: M.nowhere + .6 - M.lens0 }); ev(M.b22, 'jump'); ev(M.p28, 'cursor', { f: 2400 });
+  for (const x of [M.rTok, M.rVec, M.rBlk, M.rWord]) ev(x, 'chip', { k: 0 });
+  ev(M.rTr, 'lock');
+  for (let i = 0; i < 4; i++) ev(M.cta + .1 + i * .15, 'tick', { v: .7 });
+  ticks('Follow to go deeper', M.follow, M.follow + .7, F.ital(76));
+  ticks('Labs for every episode → link in bio', M.follow + .9, M.follow + 1.8, F.mono(32, 600), .4);
+  return E.sort((p, q) => p.t - q.t);
+}
+
+// ───────────────────────── boot ─────────────────────────
+// visit counts for the film page: GoatCounter (no cookies, no personal data); never loaded by the render tools
+if (!navigator.webdriver) { const g = document.createElement('script'); g.async = true; g.src = 'https://gc.zgo.at/count.js'; g.dataset.goatcounter = 'https://complex2vec.goatcounter.com/count'; document.head.appendChild(g); }
+(async function boot() {
+  await Promise.all([document.fonts.load(F.serif(72)), document.fonts.load(F.ital(48)), document.fonts.load(F.mono(32)), document.fonts.load(F.serif(50, 600))]);
+  DATA = await (await fetch('data.json')).json();
+  { const all = DATA.emb.flat().map(Math.abs).sort((p, q) => p - q); EMB_K = 40 / all[Math.floor(all.length * .98)]; }
+  TL = await (await fetch('timeline.json')).json();
+  window.DUR = TL.dur; window.EV = events();
+  window.TEXTS = t => { render(t); return TEXTSET; };
+  window.render = render;
+  window.READY = true;
+  if (!navigator.webdriver && !QS.has('still')) watch();
+})();
+
+function watch() {
+  document.body.classList.add('fit');
+  const cv = document.getElementById('c'), box = document.getElementById('play'), btn = document.getElementById('playBtn');
+  const au = new Audio('audio.m4a'); au.preload = 'auto';
+  let silent = false, t0 = 0, pos = 0, running = false;
+  au.addEventListener('error', () => { silent = true; });
+  const now = () => silent ? pos + (performance.now() - t0) / 1000 : au.currentTime;
+  const frame = () => {
+    if (!running) return;
+    const t = now();
+    if (t >= TL.dur || (!silent && au.ended)) { stop('↻ Watch again'); pos = 0; render(TL.dur - .01); return; }
+    render(t); requestAnimationFrame(frame);
+  };
+  const start = () => {
+    box.hidden = true; running = true;
+    if (au.ended || au.currentTime >= TL.dur - .05) au.currentTime = 0;
+    if (silent) { t0 = performance.now(); requestAnimationFrame(frame); return; }
+    au.play().then(() => requestAnimationFrame(frame)).catch(() => { silent = true; t0 = performance.now(); requestAnimationFrame(frame); });
+  };
+  const stop = label => { if (silent) pos = now(); else au.pause(); running = false; btn.textContent = label; box.hidden = false; };
+  btn.onclick = start;
+  cv.addEventListener('click', () => running ? stop('▶ Resume') : start());
+  render(POSTER_T); box.hidden = false; btn.focus({ preventScroll: true });
+}
+const POSTER_T = 7.6;
+</script>
+</body>
+</html>

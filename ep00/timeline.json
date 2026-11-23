@@ -1,0 +1,2652 @@
+{
+ "fps": 24,
+ "size": [
+  1080,
+  1920
+ ],
+ "bpm": 100,
+ "dur": 105.294,
+ "marks": {
+  "attnBar": 0.5,
+  "ffnBar": 4.48,
+  "seven": 5.86,
+  "road": 8.4,
+  "roadEnd": 10.72,
+  "stop1": 12.0,
+  "letters": 14.26,
+  "five": 15.98,
+  "stop2": 18.0,
+  "picks": 20.02,
+  "rows": 23.48,
+  "n896": 25.54,
+  "quarter": 29.54,
+  "lanes": 31.2,
+  "lane": 34.24,
+  "stop3": 37.2,
+  "attn": 39.14,
+  "look": 40.12,
+  "france": 44.7,
+  "added1": 47.9,
+  "ffn": 50.36,
+  "alone": 52.68,
+  "widen": 53.36,
+  "back": 55.74,
+  "added2": 57.2,
+  "oneblock": 58.38,
+  "stack0": 59.74,
+  "stack1": 61.921,
+  "weights": 62.4,
+  "wq": 64.38,
+  "wt": 65.8,
+  "wa": 68.04,
+  "stop4": 70.2,
+  "scored": 72.88,
+  "everyrow": 73.54,
+  "softmax": 76.2,
+  "paris": 78.44,
+  "strange": 81.0,
+  "guess": 83.22,
+  "lens0": 85.2,
+  "nowhere": 86.88,
+  "b22": 88.46,
+  "p28": 89.92,
+  "recap": 92.4,
+  "rTok": 92.4,
+  "rVec": 92.72,
+  "rBlk": 93.8,
+  "rWord": 94.98,
+  "rTr": 96.0,
+  "cta": 97.8,
+  "follow": 99.82,
+  "end": 105.294
+ },
+ "lines": [
+  {
+   "id": "L01",
+   "t0": 0.5,
+   "t1": 7.653,
+   "text": "Attention gets all the fame. But in this real language model, the feed-forward layers hold seven times more weights.",
+   "sub": "Attention gets all the fame. But in this real language model, the feed-forward layers hold 7× more weights.",
+   "words": [
+    [
+     "Attention",
+     0.5,
+     0.78
+    ],
+    [
+     "gets",
+     0.78,
+     1.22
+    ],
+    [
+     "all",
+     1.22,
+     1.58
+    ],
+    [
+     "the",
+     1.58,
+     1.78
+    ],
+    [
+     "fame,",
+     1.78,
+     2.06
+    ],
+    [
+     "but",
+     2.58,
+     2.7
+    ],
+    [
+     "in",
+     2.7,
+     2.82
+    ],
+    [
+     "this",
+     2.82,
+     2.98
+    ],
+    [
+     "real",
+     2.98,
+     3.26
+    ],
+    [
+     "language",
+     3.26,
+     3.74
+    ],
+    [
+     "model,",
+     3.74,
+     4.24
+    ],
+    [
+     "the",
+     4.48,
+     4.48
+    ],
+    [
+     "feed",
+     4.48,
+     4.72
+    ],
+    [
+     "forward",
+     4.72,
+     5.1
+    ],
+    [
+     "layers",
+     5.1,
+     5.44
+    ],
+    [
+     "hold",
+     5.44,
+     5.86
+    ],
+    [
+     "seven",
+     5.86,
+     6.3
+    ],
+    [
+     "times",
+     6.3,
+     6.66
+    ],
+    [
+     "more",
+     6.66,
+     7.0
+    ],
+    [
+     "weights.",
+     7.0,
+     7.26
+    ]
+   ]
+  },
+  {
+   "id": "L02",
+   "t0": 8.4,
+   "t1": 10.72,
+   "text": "Here's the whole Transformer, in four stops.",
+   "sub": "Here's the whole Transformer, in four stops.",
+   "words": [
+    [
+     "Here's",
+     8.4,
+     8.6
+    ],
+    [
+     "the",
+     8.6,
+     8.68
+    ],
+    [
+     "whole",
+     8.68,
+     8.82
+    ],
+    [
+     "transformer",
+     8.82,
+     9.38
+    ],
+    [
+     "in",
+     9.38,
+     9.76
+    ],
+    [
+     "4",
+     9.76,
+     9.98
+    ],
+    [
+     "stops.",
+     9.98,
+     10.34
+    ]
+   ]
+  },
+  {
+   "id": "L03",
+   "t0": 12.0,
+   "t1": 17.145,
+   "text": "Stop one: tokens. The model never reads letters. This sentence becomes five numbers.",
+   "sub": "Stop 1: tokens. The model never reads letters. This sentence becomes five numbers.",
+   "words": [
+    [
+     "Stop",
+     12.0,
+     12.22
+    ],
+    [
+     "1",
+     12.22,
+     12.5
+    ],
+    [
+     "tokens",
+     12.5,
+     12.98
+    ],
+    [
+     "the",
+     12.98,
+     13.32
+    ],
+    [
+     "model",
+     13.32,
+     13.52
+    ],
+    [
+     "never",
+     13.52,
+     13.96
+    ],
+    [
+     "reads",
+     13.96,
+     14.26
+    ],
+    [
+     "letters,",
+     14.26,
+     14.6
+    ],
+    [
+     "this",
+     15.08,
+     15.22
+    ],
+    [
+     "sentence",
+     15.22,
+     15.54
+    ],
+    [
+     "becomes",
+     15.54,
+     15.98
+    ],
+    [
+     "5",
+     15.98,
+     16.28
+    ],
+    [
+     "numbers.",
+     16.28,
+     16.8
+    ]
+   ]
+  },
+  {
+   "id": "L04",
+   "t0": 18.0,
+   "t1": 24.126,
+   "text": "Stop two: vectors. Each number picks one row from a table with a hundred and fifty-two thousand rows.",
+   "sub": "Stop 2: vectors. Each number picks one row from a table with 151,936 rows.",
+   "words": [
+    [
+     "Stop",
+     18.0,
+     18.2
+    ],
+    [
+     "two",
+     18.2,
+     18.5
+    ],
+    [
+     "vectors,",
+     18.5,
+     18.92
+    ],
+    [
+     "each",
+     19.58,
+     19.78
+    ],
+    [
+     "number",
+     19.78,
+     20.02
+    ],
+    [
+     "picks",
+     20.02,
+     20.34
+    ],
+    [
+     "one",
+     20.34,
+     20.62
+    ],
+    [
+     "row",
+     20.62,
+     20.88
+    ],
+    [
+     "from",
+     20.88,
+     21.16
+    ],
+    [
+     "a",
+     21.16,
+     21.24
+    ],
+    [
+     "table",
+     21.24,
+     21.54
+    ],
+    [
+     "with",
+     21.54,
+     21.8
+    ],
+    [
+     "152",
+     21.8,
+     22.34
+    ],
+    [
+     ",000",
+     22.34,
+     23.48
+    ],
+    [
+     "rows.",
+     23.48,
+     23.78
+    ]
+   ]
+  },
+  {
+   "id": "L05",
+   "t0": 24.6,
+   "t1": 30.652,
+   "text": "Every row holds eight hundred ninety-six numbers. That table alone is over a quarter of the model.",
+   "sub": "Every row holds 896 numbers. That table alone is over a quarter of the model.",
+   "words": [
+    [
+     "Every",
+     24.6,
+     24.78
+    ],
+    [
+     "row",
+     24.78,
+     25.12
+    ],
+    [
+     "holds",
+     25.12,
+     25.54
+    ],
+    [
+     "896",
+     25.54,
+     26.3
+    ],
+    [
+     "numbers,",
+     26.3,
+     27.36
+    ],
+    [
+     "that",
+     27.92,
+     28.02
+    ],
+    [
+     "table",
+     28.02,
+     28.34
+    ],
+    [
+     "alone",
+     28.34,
+     28.74
+    ],
+    [
+     "is",
+     28.74,
+     29.08
+    ],
+    [
+     "over",
+     29.08,
+     29.42
+    ],
+    [
+     "a",
+     29.42,
+     29.54
+    ],
+    [
+     "quarter",
+     29.54,
+     29.84
+    ],
+    [
+     "of",
+     29.84,
+     30.04
+    ],
+    [
+     "the",
+     30.04,
+     30.12
+    ],
+    [
+     "model.",
+     30.12,
+     30.44
+    ]
+   ]
+  },
+  {
+   "id": "L06",
+   "t0": 31.2,
+   "t1": 36.003,
+   "text": "Now each token is a vector, riding up its own lane of the residual stream.",
+   "sub": "Now each token is a vector, riding up its own lane of the residual stream.",
+   "words": [
+    [
+     "Now",
+     31.2,
+     31.36
+    ],
+    [
+     "each",
+     31.36,
+     31.66
+    ],
+    [
+     "token",
+     31.66,
+     32.04
+    ],
+    [
+     "is",
+     32.04,
+     32.42
+    ],
+    [
+     "a",
+     32.42,
+     32.56
+    ],
+    [
+     "vector",
+     32.56,
+     32.9
+    ],
+    [
+     "riding",
+     32.9,
+     33.56
+    ],
+    [
+     "up",
+     33.56,
+     33.84
+    ],
+    [
+     "its",
+     33.84,
+     34.02
+    ],
+    [
+     "own",
+     34.02,
+     34.24
+    ],
+    [
+     "lane",
+     34.24,
+     34.52
+    ],
+    [
+     "of",
+     34.52,
+     34.82
+    ],
+    [
+     "the",
+     34.82,
+     34.92
+    ],
+    [
+     "residual",
+     34.92,
+     35.24
+    ],
+    [
+     "stream.",
+     35.24,
+     35.68
+    ]
+   ]
+  },
+  {
+   "id": "L07",
+   "t0": 37.2,
+   "t1": 42.389,
+   "text": "Stop three: the block. First, attention. Tokens look at each other and pull in what they need.",
+   "sub": "Stop 3: the block. First, attention. Tokens look at each other and pull in what they need.",
+   "words": [
+    [
+     "Stop",
+     37.2,
+     37.44
+    ],
+    [
+     "3",
+     37.44,
+     37.74
+    ],
+    [
+     "the",
+     37.74,
+     37.98
+    ],
+    [
+     "block,",
+     37.98,
+     38.2
+    ],
+    [
+     "first,",
+     38.54,
+     38.78
+    ],
+    [
+     "attention,",
+     39.14,
+     39.42
+    ],
+    [
+     "tokens",
+     39.88,
+     40.12
+    ],
+    [
+     "look",
+     40.12,
+     40.4
+    ],
+    [
+     "at",
+     40.4,
+     40.56
+    ],
+    [
+     "each",
+     40.56,
+     40.68
+    ],
+    [
+     "other",
+     40.68,
+     40.86
+    ],
+    [
+     "and",
+     40.86,
+     41.12
+    ],
+    [
+     "pull",
+     41.12,
+     41.34
+    ],
+    [
+     "in",
+     41.34,
+     41.5
+    ],
+    [
+     "what",
+     41.5,
+     41.7
+    ],
+    [
+     "they",
+     41.7,
+     41.86
+    ],
+    [
+     "need.",
+     41.86,
+     42.14
+    ]
+   ]
+  },
+  {
+   "id": "L08",
+   "t0": 43.2,
+   "t1": 45.284,
+   "text": "Here, the word is, looks hardest at France.",
+   "sub": "Here, \"is\" looks hardest at \"France\".",
+   "words": [
+    [
+     "Here",
+     43.2,
+     43.3
+    ],
+    [
+     "the",
+     43.3,
+     43.44
+    ],
+    [
+     "word",
+     43.44,
+     43.62
+    ],
+    [
+     "is,",
+     43.62,
+     43.86
+    ],
+    [
+     "looks",
+     44.04,
+     44.14
+    ],
+    [
+     "hardest",
+     44.14,
+     44.44
+    ],
+    [
+     "at",
+     44.44,
+     44.7
+    ],
+    [
+     "France.",
+     44.7,
+     44.94
+    ]
+   ]
+  },
+  {
+   "id": "L09",
+   "t0": 46.2,
+   "t1": 48.979,
+   "text": "The result isn't swapped in. It's added to the stream.",
+   "sub": "The result isn't swapped in. It's added to the stream.",
+   "words": [
+    [
+     "The",
+     46.2,
+     46.26
+    ],
+    [
+     "result",
+     46.26,
+     46.5
+    ],
+    [
+     "isn't",
+     46.5,
+     46.9
+    ],
+    [
+     "swapped",
+     46.9,
+     47.08
+    ],
+    [
+     "in,",
+     47.08,
+     47.4
+    ],
+    [
+     "it's",
+     47.74,
+     47.9
+    ],
+    [
+     "added",
+     47.9,
+     48.12
+    ],
+    [
+     "to",
+     48.12,
+     48.34
+    ],
+    [
+     "the",
+     48.34,
+     48.42
+    ],
+    [
+     "stream.",
+     48.42,
+     48.64
+    ]
+   ]
+  },
+  {
+   "id": "L10",
+   "t0": 49.8,
+   "t1": 56.247,
+   "text": "Next, the feed-forward layer. Each token works alone, widening to almost five thousand numbers, and back.",
+   "sub": "Next, the feed-forward layer. Each token works alone, widening to 4,864 numbers, and back.",
+   "words": [
+    [
+     "Next,",
+     49.8,
+     50.1
+    ],
+    [
+     "the",
+     50.32,
+     50.36
+    ],
+    [
+     "feed",
+     50.36,
+     50.54
+    ],
+    [
+     "forward",
+     50.54,
+     50.92
+    ],
+    [
+     "layer.",
+     50.92,
+     51.32
+    ],
+    [
+     "Each",
+     51.82,
+     51.94
+    ],
+    [
+     "token",
+     51.94,
+     52.32
+    ],
+    [
+     "works",
+     52.32,
+     52.68
+    ],
+    [
+     "alone,",
+     52.68,
+     53.02
+    ],
+    [
+     "widening",
+     53.36,
+     53.66
+    ],
+    [
+     "to",
+     53.66,
+     53.9
+    ],
+    [
+     "almost",
+     53.9,
+     54.14
+    ],
+    [
+     "5",
+     54.14,
+     54.66
+    ],
+    [
+     ",000",
+     54.66,
+     55.16
+    ],
+    [
+     "numbers",
+     55.16,
+     55.46
+    ],
+    [
+     "and",
+     55.46,
+     55.74
+    ],
+    [
+     "back.",
+     55.74,
+     55.96
+    ]
+   ]
+  },
+  {
+   "id": "L11",
+   "t0": 57.0,
+   "t1": 61.421,
+   "text": "That's added in, too. One block, done. This model stacks twenty-four of them.",
+   "sub": "That's added in, too. One block, done. This model stacks 24 of them.",
+   "words": [
+    [
+     "That's",
+     57.0,
+     57.2
+    ],
+    [
+     "added",
+     57.2,
+     57.42
+    ],
+    [
+     "in",
+     57.42,
+     57.66
+    ],
+    [
+     "to",
+     57.66,
+     57.9
+    ],
+    [
+     "one",
+     57.9,
+     58.38
+    ],
+    [
+     "block",
+     58.38,
+     58.68
+    ],
+    [
+     "done,",
+     58.68,
+     59.06
+    ],
+    [
+     "this",
+     59.42,
+     59.54
+    ],
+    [
+     "model",
+     59.54,
+     59.74
+    ],
+    [
+     "stacks",
+     59.74,
+     60.14
+    ],
+    [
+     "24",
+     60.14,
+     60.56
+    ],
+    [
+     "of",
+     60.56,
+     61.08
+    ],
+    [
+     "them.",
+     61.08,
+     61.22
+    ]
+   ]
+  },
+  {
+   "id": "L12",
+   "t0": 62.4,
+   "t1": 69.212,
+   "text": "So that's where the weights live: a quarter in the table, two thirds in feed-forward, and less than a tenth in attention.",
+   "sub": "So that's where the weights live: a quarter in the table, two thirds in feed-forward, and less than a tenth in attention.",
+   "words": [
+    [
+     "So",
+     62.4,
+     62.52
+    ],
+    [
+     "that's",
+     62.52,
+     62.86
+    ],
+    [
+     "where",
+     62.86,
+     63.06
+    ],
+    [
+     "the",
+     63.06,
+     63.2
+    ],
+    [
+     "weight's",
+     63.2,
+     63.56
+    ],
+    [
+     "live,",
+     63.56,
+     63.82
+    ],
+    [
+     "a",
+     64.26,
+     64.38
+    ],
+    [
+     "quarter",
+     64.38,
+     64.74
+    ],
+    [
+     "in",
+     64.74,
+     64.96
+    ],
+    [
+     "the",
+     64.96,
+     65.06
+    ],
+    [
+     "table,",
+     65.06,
+     65.44
+    ],
+    [
+     "two",
+     65.7,
+     65.8
+    ],
+    [
+     "thirds",
+     65.8,
+     66.14
+    ],
+    [
+     "in",
+     66.14,
+     66.42
+    ],
+    [
+     "feed",
+     66.42,
+     66.66
+    ],
+    [
+     "forward",
+     66.66,
+     67.04
+    ],
+    [
+     "and",
+     67.04,
+     67.42
+    ],
+    [
+     "less",
+     67.42,
+     67.68
+    ],
+    [
+     "than",
+     67.68,
+     67.96
+    ],
+    [
+     "a",
+     67.96,
+     68.04
+    ],
+    [
+     "tenth",
+     68.04,
+     68.28
+    ],
+    [
+     "in",
+     68.28,
+     68.52
+    ],
+    [
+     "attention.",
+     68.52,
+     68.82
+    ]
+   ]
+  },
+  {
+   "id": "L13",
+   "t0": 70.2,
+   "t1": 75.546,
+   "text": "Stop four: the next word. The last vector is scored against every row of that same table.",
+   "sub": "Stop 4: the next word. The last vector is scored against every row of that same table.",
+   "words": [
+    [
+     "Stop",
+     70.2,
+     70.44
+    ],
+    [
+     "for",
+     70.44,
+     70.74
+    ],
+    [
+     "the",
+     70.74,
+     71.0
+    ],
+    [
+     "next",
+     71.0,
+     71.2
+    ],
+    [
+     "word,",
+     71.2,
+     71.54
+    ],
+    [
+     "the",
+     71.92,
+     72.04
+    ],
+    [
+     "last",
+     72.04,
+     72.24
+    ],
+    [
+     "vector",
+     72.24,
+     72.6
+    ],
+    [
+     "is",
+     72.6,
+     72.88
+    ],
+    [
+     "scored",
+     72.88,
+     73.14
+    ],
+    [
+     "against",
+     73.14,
+     73.54
+    ],
+    [
+     "every",
+     73.54,
+     73.92
+    ],
+    [
+     "row",
+     73.92,
+     74.28
+    ],
+    [
+     "of",
+     74.28,
+     74.48
+    ],
+    [
+     "that",
+     74.48,
+     74.64
+    ],
+    [
+     "same",
+     74.64,
+     74.9
+    ],
+    [
+     "table.",
+     74.9,
+     75.28
+    ]
+   ]
+  },
+  {
+   "id": "L14",
+   "t0": 76.2,
+   "t1": 79.82,
+   "text": "Softmax turns the scores into odds. Paris: thirty percent.",
+   "sub": "Softmax turns the scores into odds. Paris: 30%.",
+   "words": [
+    [
+     "Softmax",
+     76.2,
+     76.58
+    ],
+    [
+     "turns",
+     76.58,
+     76.9
+    ],
+    [
+     "the",
+     76.9,
+     77.12
+    ],
+    [
+     "scores",
+     77.12,
+     77.34
+    ],
+    [
+     "into",
+     77.34,
+     77.7
+    ],
+    [
+     "odds,",
+     77.7,
+     78.0
+    ],
+    [
+     "Paris",
+     78.44,
+     78.64
+    ],
+    [
+     "30%.",
+     78.64,
+     79.74
+    ]
+   ]
+  },
+  {
+   "id": "L15",
+   "t0": 81.0,
+   "t1": 84.747,
+   "text": "Now the strange part. Read the model's guess after every block.",
+   "sub": "Now the strange part. Read the model's guess after every block.",
+   "words": [
+    [
+     "Now",
+     81.0,
+     81.16
+    ],
+    [
+     "the",
+     81.16,
+     81.36
+    ],
+    [
+     "strange",
+     81.36,
+     81.62
+    ],
+    [
+     "part,",
+     81.62,
+     82.06
+    ],
+    [
+     "read",
+     82.46,
+     82.64
+    ],
+    [
+     "the",
+     82.64,
+     82.82
+    ],
+    [
+     "model's",
+     82.82,
+     83.22
+    ],
+    [
+     "guess",
+     83.22,
+     83.4
+    ],
+    [
+     "after",
+     83.4,
+     83.82
+    ],
+    [
+     "every",
+     83.82,
+     84.16
+    ],
+    [
+     "block.",
+     84.16,
+     84.46
+    ]
+   ]
+  },
+  {
+   "id": "L16",
+   "t0": 85.2,
+   "t1": 91.12,
+   "text": "For twenty-one blocks, Paris is nowhere. Then, in block twenty-two, it jumps to twenty-eight percent.",
+   "sub": "For 21 blocks, Paris is nowhere. Then, in block 22, it jumps to 28%.",
+   "words": [
+    [
+     "For",
+     85.2,
+     85.28
+    ],
+    [
+     "21",
+     85.28,
+     85.64
+    ],
+    [
+     "blocks",
+     85.64,
+     86.06
+    ],
+    [
+     "Paris",
+     86.06,
+     86.52
+    ],
+    [
+     "is",
+     86.52,
+     86.88
+    ],
+    [
+     "nowhere,",
+     86.88,
+     87.14
+    ],
+    [
+     "then",
+     87.76,
+     87.96
+    ],
+    [
+     "in",
+     87.96,
+     88.22
+    ],
+    [
+     "block",
+     88.22,
+     88.46
+    ],
+    [
+     "22",
+     88.46,
+     88.92
+    ],
+    [
+     "it",
+     88.92,
+     89.4
+    ],
+    [
+     "jumps",
+     89.4,
+     89.64
+    ],
+    [
+     "to",
+     89.64,
+     89.92
+    ],
+    [
+     "28%.",
+     89.92,
+     90.7
+    ]
+   ]
+  },
+  {
+   "id": "L17",
+   "t0": 92.4,
+   "t1": 96.865,
+   "text": "Tokens, vectors, twenty-four blocks, one next word. That's the Transformer.",
+   "sub": "Tokens, vectors, 24 blocks, one next word. That's the Transformer.",
+   "words": [
+    [
+     "tokens",
+     92.4,
+     92.72
+    ],
+    [
+     "vectors",
+     92.72,
+     93.14
+    ],
+    [
+     "24",
+     93.14,
+     93.8
+    ],
+    [
+     "blocks",
+     93.8,
+     94.32
+    ],
+    [
+     "one",
+     94.32,
+     94.7
+    ],
+    [
+     "next",
+     94.7,
+     94.98
+    ],
+    [
+     "word",
+     94.98,
+     95.28
+    ],
+    [
+     "that's",
+     95.28,
+     95.9
+    ],
+    [
+     "the",
+     95.9,
+     96.0
+    ],
+    [
+     "transformer",
+     96.0,
+     96.24
+    ]
+   ]
+  },
+  {
+   "id": "L18",
+   "t0": 97.8,
+   "t1": 101.094,
+   "text": "Each stop gets its own episode. Follow to go deeper.",
+   "sub": "Each stop gets its own episode. Follow to go deeper.",
+   "words": [
+    [
+     "Each",
+     97.8,
+     97.9
+    ],
+    [
+     "stop",
+     97.9,
+     98.2
+    ],
+    [
+     "gets",
+     98.2,
+     98.52
+    ],
+    [
+     "its",
+     98.52,
+     98.74
+    ],
+    [
+     "own",
+     98.74,
+     98.94
+    ],
+    [
+     "episode,",
+     98.94,
+     99.34
+    ],
+    [
+     "follow",
+     99.82,
+     100.14
+    ],
+    [
+     "to",
+     100.14,
+     100.34
+    ],
+    [
+     "go",
+     100.34,
+     100.48
+    ],
+    [
+     "deeper.",
+     100.48,
+     100.76
+    ]
+   ]
+  }
+ ],
+ "cues": [
+  {
+   "t0": 0.5,
+   "text": "Attention gets all the fame.",
+   "line": "L01",
+   "t1": 2.54,
+   "w": [
+    [
+     "Attention",
+     0.5
+    ],
+    [
+     "gets",
+     0.941
+    ],
+    [
+     "all",
+     1.162
+    ],
+    [
+     "the",
+     1.339
+    ],
+    [
+     "fame.",
+     1.515
+    ]
+   ]
+  },
+  {
+   "t0": 2.58,
+   "text": "But in this real language model,",
+   "line": "L01",
+   "t1": 4.44,
+   "w": [
+    [
+     "But",
+     2.58
+    ],
+    [
+     "in",
+     2.721
+    ],
+    [
+     "this",
+     2.826
+    ],
+    [
+     "real",
+     3.002
+    ],
+    [
+     "language",
+     3.178
+    ],
+    [
+     "model,",
+     3.494
+    ]
+   ]
+  },
+  {
+   "t0": 4.48,
+   "text": "the feed-forward layers hold 7× more weights.",
+   "line": "L01",
+   "t1": 8.153,
+   "w": [
+    [
+     "the",
+     4.48
+    ],
+    [
+     "feed-forward",
+     4.699
+    ],
+    [
+     "layers",
+     5.411
+    ],
+    [
+     "hold",
+     5.795
+    ],
+    [
+     "7×",
+     6.069
+    ],
+    [
+     "more",
+     6.233
+    ],
+    [
+     "weights.",
+     6.507
+    ]
+   ]
+  },
+  {
+   "t0": 8.4,
+   "text": "Here's the whole Transformer, in four stops.",
+   "line": "L02",
+   "t1": 11.22,
+   "w": [
+    [
+     "Here's",
+     8.4
+    ],
+    [
+     "the",
+     8.646
+    ],
+    [
+     "whole",
+     8.786
+    ],
+    [
+     "Transformer,",
+     8.997
+    ],
+    [
+     "in",
+     9.453
+    ],
+    [
+     "four",
+     9.559
+    ],
+    [
+     "stops.",
+     9.734
+    ]
+   ]
+  },
+  {
+   "t0": 12.0,
+   "text": "Stop 1: tokens. The model never reads letters.",
+   "line": "L03",
+   "t1": 15.04,
+   "w": [
+    [
+     "Stop",
+     12.0
+    ],
+    [
+     "1:",
+     12.24
+    ],
+    [
+     "tokens.",
+     12.385
+    ],
+    [
+     "The",
+     12.769
+    ],
+    [
+     "model",
+     12.962
+    ],
+    [
+     "never",
+     13.25
+    ],
+    [
+     "reads",
+     13.539
+    ],
+    [
+     "letters.",
+     13.827
+    ]
+   ]
+  },
+  {
+   "t0": 15.08,
+   "text": "This sentence becomes five numbers.",
+   "line": "L03",
+   "t1": 17.645,
+   "w": [
+    [
+     "This",
+     15.08
+    ],
+    [
+     "sentence",
+     15.247
+    ],
+    [
+     "becomes",
+     15.547
+    ],
+    [
+     "five",
+     15.813
+    ],
+    [
+     "numbers.",
+     15.98
+    ]
+   ]
+  },
+  {
+   "t0": 18.0,
+   "text": "Stop 2: vectors.",
+   "line": "L04",
+   "t1": 19.54,
+   "w": [
+    [
+     "Stop",
+     18.0
+    ],
+    [
+     "2:",
+     18.147
+    ],
+    [
+     "vectors.",
+     18.235
+    ]
+   ]
+  },
+  {
+   "t0": 19.58,
+   "text": "Each number picks one row from a table with 151,936 rows.",
+   "line": "L04",
+   "t1": 24.56,
+   "w": [
+    [
+     "Each",
+     19.58
+    ],
+    [
+     "number",
+     19.916
+    ],
+    [
+     "picks",
+     20.387
+    ],
+    [
+     "one",
+     20.79
+    ],
+    [
+     "row",
+     21.059
+    ],
+    [
+     "from",
+     21.328
+    ],
+    [
+     "a",
+     21.664
+    ],
+    [
+     "table",
+     21.799
+    ],
+    [
+     "with",
+     22.202
+    ],
+    [
+     "151,936",
+     22.539
+    ],
+    [
+     "rows.",
+     23.077
+    ]
+   ]
+  },
+  {
+   "t0": 24.6,
+   "text": "Every row holds 896 numbers.",
+   "line": "L05",
+   "t1": 26.26,
+   "w": [
+    [
+     "Every",
+     24.6
+    ],
+    [
+     "row",
+     24.794
+    ],
+    [
+     "holds",
+     24.924
+    ],
+    [
+     "896",
+     25.119
+    ],
+    [
+     "numbers.",
+     25.248
+    ]
+   ]
+  },
+  {
+   "t0": 26.3,
+   "text": "That table alone is over a quarter of the model.",
+   "line": "L05",
+   "t1": 31.152,
+   "w": [
+    [
+     "That",
+     26.3
+    ],
+    [
+     "table",
+     26.69
+    ],
+    [
+     "alone",
+     27.158
+    ],
+    [
+     "is",
+     27.625
+    ],
+    [
+     "over",
+     27.859
+    ],
+    [
+     "a",
+     28.249
+    ],
+    [
+     "quarter",
+     28.405
+    ],
+    [
+     "of",
+     29.029
+    ],
+    [
+     "the",
+     29.262
+    ],
+    [
+     "model.",
+     29.574
+    ]
+   ]
+  },
+  {
+   "t0": 31.2,
+   "text": "Now each token is a vector,",
+   "line": "L06",
+   "t1": 32.86,
+   "w": [
+    [
+     "Now",
+     31.2
+    ],
+    [
+     "each",
+     31.394
+    ],
+    [
+     "token",
+     31.637
+    ],
+    [
+     "is",
+     31.929
+    ],
+    [
+     "a",
+     32.074
+    ],
+    [
+     "vector,",
+     32.171
+    ]
+   ]
+  },
+  {
+   "t0": 32.9,
+   "text": "riding up its own lane of the residual stream.",
+   "line": "L06",
+   "t1": 36.503,
+   "w": [
+    [
+     "riding",
+     32.9
+    ],
+    [
+     "up",
+     33.249
+    ],
+    [
+     "its",
+     33.398
+    ],
+    [
+     "own",
+     33.597
+    ],
+    [
+     "lane",
+     33.796
+    ],
+    [
+     "of",
+     34.045
+    ],
+    [
+     "the",
+     34.194
+    ],
+    [
+     "residual",
+     34.394
+    ],
+    [
+     "stream.",
+     34.842
+    ]
+   ]
+  },
+  {
+   "t0": 37.2,
+   "text": "Stop 3: the block. First, attention.",
+   "line": "L07",
+   "t1": 39.1,
+   "w": [
+    [
+     "Stop",
+     37.2
+    ],
+    [
+     "3:",
+     37.381
+    ],
+    [
+     "the",
+     37.49
+    ],
+    [
+     "block.",
+     37.635
+    ],
+    [
+     "First,",
+     37.888
+    ],
+    [
+     "attention.",
+     38.142
+    ]
+   ]
+  },
+  {
+   "t0": 39.14,
+   "text": "Tokens look at each other and pull in what they need.",
+   "line": "L07",
+   "t1": 42.889,
+   "w": [
+    [
+     "Tokens",
+     39.14
+    ],
+    [
+     "look",
+     39.493
+    ],
+    [
+     "at",
+     39.744
+    ],
+    [
+     "each",
+     39.896
+    ],
+    [
+     "other",
+     40.147
+    ],
+    [
+     "and",
+     40.45
+    ],
+    [
+     "pull",
+     40.651
+    ],
+    [
+     "in",
+     40.903
+    ],
+    [
+     "what",
+     41.054
+    ],
+    [
+     "they",
+     41.306
+    ],
+    [
+     "need.",
+     41.558
+    ]
+   ]
+  },
+  {
+   "t0": 43.2,
+   "text": "Here, \"is\" looks hardest at \"France\".",
+   "line": "L08",
+   "t1": 45.784,
+   "w": [
+    [
+     "Here,",
+     43.2
+    ],
+    [
+     "\"is\"",
+     43.437
+    ],
+    [
+     "looks",
+     43.634
+    ],
+    [
+     "hardest",
+     43.871
+    ],
+    [
+     "at",
+     44.187
+    ],
+    [
+     "\"France\".",
+     44.305
+    ]
+   ]
+  },
+  {
+   "t0": 46.2,
+   "text": "The result isn't swapped in. It's added to the stream.",
+   "line": "L09",
+   "t1": 49.479,
+   "w": [
+    [
+     "The",
+     46.2
+    ],
+    [
+     "result",
+     46.361
+    ],
+    [
+     "isn't",
+     46.644
+    ],
+    [
+     "swapped",
+     46.886
+    ],
+    [
+     "in.",
+     47.209
+    ],
+    [
+     "It's",
+     47.371
+    ],
+    [
+     "added",
+     47.572
+    ],
+    [
+     "to",
+     47.815
+    ],
+    [
+     "the",
+     47.936
+    ],
+    [
+     "stream.",
+     48.097
+    ]
+   ]
+  },
+  {
+   "t0": 49.8,
+   "text": "Next, the feed-forward layer.",
+   "line": "L10",
+   "t1": 51.9,
+   "w": [
+    [
+     "Next,",
+     49.8
+    ],
+    [
+     "the",
+     50.204
+    ],
+    [
+     "feed-forward",
+     50.473
+    ],
+    [
+     "layer.",
+     51.349
+    ]
+   ]
+  },
+  {
+   "t0": 51.94,
+   "text": "Each token works alone,",
+   "line": "L10",
+   "t1": 53.62,
+   "w": [
+    [
+     "Each",
+     51.94
+    ],
+    [
+     "token",
+     52.236
+    ],
+    [
+     "works",
+     52.591
+    ],
+    [
+     "alone,",
+     52.946
+    ]
+   ]
+  },
+  {
+   "t0": 53.66,
+   "text": "widening to 4,864 numbers, and back.",
+   "line": "L10",
+   "t1": 56.747,
+   "w": [
+    [
+     "widening",
+     53.66
+    ],
+    [
+     "to",
+     54.166
+    ],
+    [
+     "4,864",
+     54.335
+    ],
+    [
+     "numbers,",
+     54.672
+    ],
+    [
+     "and",
+     55.178
+    ],
+    [
+     "back.",
+     55.403
+    ]
+   ]
+  },
+  {
+   "t0": 57.0,
+   "text": "That's added in, too. One block, done.",
+   "line": "L11",
+   "t1": 59.5,
+   "w": [
+    [
+     "That's",
+     57.0
+    ],
+    [
+     "added",
+     57.434
+    ],
+    [
+     "in,",
+     57.807
+    ],
+    [
+     "too.",
+     58.055
+    ],
+    [
+     "One",
+     58.365
+    ],
+    [
+     "block,",
+     58.613
+    ],
+    [
+     "done.",
+     59.048
+    ]
+   ]
+  },
+  {
+   "t0": 59.54,
+   "text": "This model stacks 24 of them.",
+   "line": "L11",
+   "t1": 61.921,
+   "w": [
+    [
+     "This",
+     59.54
+    ],
+    [
+     "model",
+     59.797
+    ],
+    [
+     "stacks",
+     60.105
+    ],
+    [
+     "24",
+     60.464
+    ],
+    [
+     "of",
+     60.618
+    ],
+    [
+     "them.",
+     60.772
+    ]
+   ]
+  },
+  {
+   "t0": 62.4,
+   "text": "So that's where the weights live:",
+   "line": "L12",
+   "t1": 64.22,
+   "w": [
+    [
+     "So",
+     62.4
+    ],
+    [
+     "that's",
+     62.502
+    ],
+    [
+     "where",
+     62.741
+    ],
+    [
+     "the",
+     62.946
+    ],
+    [
+     "weights",
+     63.082
+    ],
+    [
+     "live:",
+     63.355
+    ]
+   ]
+  },
+  {
+   "t0": 64.26,
+   "text": "a quarter in the table, two thirds in feed-forward,",
+   "line": "L12",
+   "t1": 67.0,
+   "w": [
+    [
+     "a",
+     64.26
+    ],
+    [
+     "quarter",
+     64.352
+    ],
+    [
+     "in",
+     64.722
+    ],
+    [
+     "the",
+     64.86
+    ],
+    [
+     "table,",
+     65.045
+    ],
+    [
+     "two",
+     65.368
+    ],
+    [
+     "thirds",
+     65.552
+    ],
+    [
+     "in",
+     65.875
+    ],
+    [
+     "feed-forward,",
+     66.014
+    ]
+   ]
+  },
+  {
+   "t0": 67.04,
+   "text": "and less than a tenth in attention.",
+   "line": "L12",
+   "t1": 69.712,
+   "w": [
+    [
+     "and",
+     67.04
+    ],
+    [
+     "less",
+     67.204
+    ],
+    [
+     "than",
+     67.41
+    ],
+    [
+     "a",
+     67.616
+    ],
+    [
+     "tenth",
+     67.698
+    ],
+    [
+     "in",
+     67.944
+    ],
+    [
+     "attention.",
+     68.068
+    ]
+   ]
+  },
+  {
+   "t0": 70.2,
+   "text": "Stop 4: the next word.",
+   "line": "L13",
+   "t1": 71.88,
+   "w": [
+    [
+     "Stop",
+     70.2
+    ],
+    [
+     "4:",
+     70.417
+    ],
+    [
+     "the",
+     70.548
+    ],
+    [
+     "next",
+     70.722
+    ],
+    [
+     "word.",
+     70.939
+    ]
+   ]
+  },
+  {
+   "t0": 71.92,
+   "text": "The last vector is scored against every row of that same table.",
+   "line": "L13",
+   "t1": 76.046,
+   "w": [
+    [
+     "The",
+     71.92
+    ],
+    [
+     "last",
+     72.106
+    ],
+    [
+     "vector",
+     72.339
+    ],
+    [
+     "is",
+     72.665
+    ],
+    [
+     "scored",
+     72.805
+    ],
+    [
+     "against",
+     73.131
+    ],
+    [
+     "every",
+     73.503
+    ],
+    [
+     "row",
+     73.782
+    ],
+    [
+     "of",
+     73.969
+    ],
+    [
+     "that",
+     74.108
+    ],
+    [
+     "same",
+     74.341
+    ],
+    [
+     "table.",
+     74.574
+    ]
+   ]
+  },
+  {
+   "t0": 76.2,
+   "text": "Softmax turns the scores into odds. Paris: 30%.",
+   "line": "L14",
+   "t1": 80.32,
+   "w": [
+    [
+     "Softmax",
+     76.2
+    ],
+    [
+     "turns",
+     76.607
+    ],
+    [
+     "the",
+     76.912
+    ],
+    [
+     "scores",
+     77.115
+    ],
+    [
+     "into",
+     77.471
+    ],
+    [
+     "odds.",
+     77.725
+    ],
+    [
+     "Paris:",
+     78.03
+    ],
+    [
+     "30%.",
+     78.386
+    ]
+   ]
+  },
+  {
+   "t0": 81.0,
+   "text": "Now the strange part.",
+   "line": "L15",
+   "t1": 82.42,
+   "w": [
+    [
+     "Now",
+     81.0
+    ],
+    [
+     "the",
+     81.113
+    ],
+    [
+     "strange",
+     81.225
+    ],
+    [
+     "part.",
+     81.451
+    ]
+   ]
+  },
+  {
+   "t0": 82.46,
+   "text": "Read the model's guess after every block.",
+   "line": "L15",
+   "t1": 85.16,
+   "w": [
+    [
+     "Read",
+     82.46
+    ],
+    [
+     "the",
+     82.662
+    ],
+    [
+     "model's",
+     82.824
+    ],
+    [
+     "guess",
+     83.148
+    ],
+    [
+     "after",
+     83.391
+    ],
+    [
+     "every",
+     83.634
+    ],
+    [
+     "block.",
+     83.877
+    ]
+   ]
+  },
+  {
+   "t0": 85.2,
+   "text": "For 21 blocks, Paris is nowhere.",
+   "line": "L16",
+   "t1": 87.92,
+   "w": [
+    [
+     "For",
+     85.2
+    ],
+    [
+     "21",
+     85.51
+    ],
+    [
+     "blocks,",
+     85.743
+    ],
+    [
+     "Paris",
+     86.364
+    ],
+    [
+     "is",
+     86.829
+    ],
+    [
+     "nowhere.",
+     87.062
+    ]
+   ]
+  },
+  {
+   "t0": 87.96,
+   "text": "Then, in block 22, it jumps to 28%.",
+   "line": "L16",
+   "t1": 91.62,
+   "w": [
+    [
+     "Then,",
+     87.96
+    ],
+    [
+     "in",
+     88.287
+    ],
+    [
+     "block",
+     88.45
+    ],
+    [
+     "22,",
+     88.777
+    ],
+    [
+     "it",
+     88.994
+    ],
+    [
+     "jumps",
+     89.158
+    ],
+    [
+     "to",
+     89.484
+    ],
+    [
+     "28%.",
+     89.648
+    ]
+   ]
+  },
+  {
+   "t0": 92.4,
+   "text": "Tokens, vectors, 24 blocks, one next word.",
+   "line": "L17",
+   "t1": 95.24,
+   "w": [
+    [
+     "Tokens,",
+     92.4
+    ],
+    [
+     "vectors,",
+     92.88
+    ],
+    [
+     "24",
+     93.42
+    ],
+    [
+     "blocks,",
+     93.6
+    ],
+    [
+     "one",
+     94.08
+    ],
+    [
+     "next",
+     94.32
+    ],
+    [
+     "word.",
+     94.62
+    ]
+   ]
+  },
+  {
+   "t0": 95.28,
+   "text": "That's the Transformer.",
+   "line": "L17",
+   "t1": 97.365,
+   "w": [
+    [
+     "That's",
+     95.28
+    ],
+    [
+     "the",
+     95.49
+    ],
+    [
+     "Transformer.",
+     95.61
+    ]
+   ]
+  },
+  {
+   "t0": 97.8,
+   "text": "Each stop gets its own episode. Follow to go deeper.",
+   "line": "L18",
+   "t1": 101.594,
+   "w": [
+    [
+     "Each",
+     97.8
+    ],
+    [
+     "stop",
+     98.053
+    ],
+    [
+     "gets",
+     98.306
+    ],
+    [
+     "its",
+     98.558
+    ],
+    [
+     "own",
+     98.761
+    ],
+    [
+     "episode.",
+     98.963
+    ],
+    [
+     "Follow",
+     99.418
+    ],
+    [
+     "to",
+     99.772
+    ],
+    [
+     "go",
+     99.924
+    ],
+    [
+     "deeper.",
+     100.075
+    ]
+   ]
+  }
+ ]
+}
