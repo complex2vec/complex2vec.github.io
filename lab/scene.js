@@ -14,8 +14,8 @@ export const LAYOUT = { G: 1.9, Y_EMB: 0.9, Y_POS: 2.1, Y_B0: 3.5, BH: 7.4, Z_BR
 const o = { ln1: .55, br: .3, attB: 1.35, attT: 3.15, add1: 3.7, ln2: 4.25, ffn: 5.35, ffnH: 1.3, add2: 6.75 };
 
 export class Scene3D {
-  constructor(host, { onPick, onHover }) {
-    this.host = host; this.onPick = onPick; this.onHover = onHover;
+  constructor(host, { onPick = () => {}, onHover = () => {}, manual = false } = {}) {
+    this.host = host; this.onPick = onPick; this.onHover = onHover; this.manual = manual;   // manual: no animation loop, frame(t) draws one frame (film capture)
     let r;
     try { r = this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' }); }
     catch (e) { host.insertAdjacentHTML('beforeend', '<p style="padding:24px;color:#FFB547">This browser could not start WebGL, so the 3D view is off. The panels still work. Try enabling hardware acceleration.</p>'); throw e; }
@@ -39,7 +39,13 @@ export class Scene3D {
       const hit = this.pick(e); this.onPick(hit ? hit.userData : null);
     });
     new ResizeObserver(() => this.resize()).observe(host); this.resize();
-    const loop = () => { requestAnimationFrame(loop); this.tick(); }; loop();
+    if (!manual) { const loop = () => { requestAnimationFrame(loop); this.tick(); }; loop(); }
+  }
+
+  /** Film mode: draw the frame at time t (s) with the camera at cam = { pos: [x,y,z], tgt: [x,y,z] }. Deterministic. */
+  frame(t, cam) {
+    if (cam) { this.camera.position.set(...cam.pos); this.controls.target.set(...cam.tgt); this.camera.lookAt(this.controls.target); }
+    this.tick(t);
   }
 
   get glow() { return this._glow; }
@@ -84,6 +90,7 @@ export class Scene3D {
   clear() {
     this.root.traverse(ob => { if (ob.geometry) ob.geometry.dispose(); if (ob.material) ob.material.dispose(); if (ob.element) ob.element.remove(); });
     this.scene.remove(this.root); this.root = new THREE.Group(); this.scene.add(this.root); this.pickables = []; this.parts = []; this.glowers = []; this.flows = [];
+    let a = 12345; this.rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let x = a; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };   // seeded: same dots on every render
   }
 
   // ---------- build the whole model from a forward trace ----------
@@ -283,7 +290,7 @@ export class Scene3D {
   flow(pts, col, speed = .7) {                              // a dot that keeps travelling along a polyline
     const curve = new THREE.CurvePath(), V = pts.map(p => new THREE.Vector3(...p));
     for (let i = 0; i < V.length - 1; i++) curve.add(new THREE.LineCurve3(V[i], V[i + 1]));
-    this.flows.push({ curve, col, speed: speed / Math.max(.5, curve.getLength() / 2), off: Math.random(), size: .8 });
+    this.flows.push({ curve, col, speed: speed / Math.max(.5, curve.getLength() / 2), off: this.rnd(), size: .8 });
   }
   flowPoints() {
     const n = this.flows.length; if (!n) { this.fpts = null; return; }
@@ -299,7 +306,7 @@ export class Scene3D {
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const m = new THREE.PointsMaterial({ color: COL.hot, size: .12, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false });
     const pts = new THREE.Points(g, m); this.root.add(pts);
-    this.parts = { pts, pos, n, T, X, y0: resY[0], y1: YF + 1.9, seed: Array.from({ length: n }, () => Math.random()) };
+    this.parts = { pts, pos, n, T, X, y0: resY[0], y1: YF + 1.9, seed: Array.from({ length: n }, () => this.rnd()) };
   }
 
   // ---------- picking ----------
@@ -350,8 +357,8 @@ export class Scene3D {
   play(onStage, dur = 14000) { this.front = { t0: performance.now(), dur, onStage, i: -1 }; }
   stop() { this.front = null; this.glowers?.forEach(g => g.m.material && (g.m.material.opacity = g.base)); }
 
-  tick() {
-    const now = performance.now(), t = (now - this.t0) / 1000;
+  tick(tFilm) {
+    const now = performance.now(), t = tFilm ?? (now - this.t0) / 1000;
     if (this.fly) {
       const k = Math.min(1, (now - this.fly.t0) / this.fly.dur), e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
       this.controls.target.lerpVectors(this.fly.a[0], this.fly.b[0], e); this.camera.position.lerpVectors(this.fly.a[1], this.fly.b[1], e);
@@ -388,7 +395,7 @@ export class Scene3D {
       }
       P.pts.geometry.attributes.position.needsUpdate = true;
     }
-    this.controls.update();
+    if (tFilm === undefined) this.controls.update();
     if (this.glow) this.composer.render(); else this.renderer.render(this.scene, this.camera);
     this.css.render(this.scene, this.camera);
   }

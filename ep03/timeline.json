@@ -1,0 +1,1736 @@
+{
+ "fps": 24,
+ "size": [
+  1080,
+  1920
+ ],
+ "bpm": 100,
+ "dur": 66.33,
+ "marks": {
+  "forget": 4.24,
+  "chips": 5.92,
+  "training": 8.02,
+  "b1": 10.8,
+  "b1switch": 11.44,
+  "b1off": 11.62,
+  "dave": 14.78,
+  "eight": 20.44,
+  "b1end": 21.952,
+  "b2": 23.4,
+  "b2off": 24.12,
+  "capital": 26.88,
+  "repeats": 28.3,
+  "finds": 31.32,
+  "paris": 33.64,
+  "b2end": 34.669,
+  "b3": 36.0,
+  "cut": 36.7,
+  "highway": 38.24,
+  "babbles": 41.46,
+  "collapses": 42.36,
+  "b3end": 43.264,
+  "b4": 44.4,
+  "random": 45.52,
+  "twelve": 49.1,
+  "fog": 51.22,
+  "training2": 54.88,
+  "sharp": 56.6,
+  "cta": 58.8,
+  "lab": 60.0,
+  "bio": 61.86,
+  "poster": 15.58,
+  "end": 66.33
+ },
+ "lines": [
+  {
+   "id": "L01",
+   "t0": 0.5,
+   "t1": 4.711,
+   "text": "This tiny language model knows who you are. One switch makes it forget.",
+   "sub": "This tiny language model knows who you are. One switch makes it forget.",
+   "words": [
+    [
+     "This",
+     0.5,
+     0.6
+    ],
+    [
+     "tiny",
+     0.6,
+     0.88
+    ],
+    [
+     "language",
+     0.88,
+     1.36
+    ],
+    [
+     "model",
+     1.36,
+     1.68
+    ],
+    [
+     "knows",
+     1.68,
+     2.1
+    ],
+    [
+     "who",
+     2.1,
+     2.38
+    ],
+    [
+     "you",
+     2.38,
+     2.56
+    ],
+    [
+     "are,",
+     2.56,
+     2.82
+    ],
+    [
+     "one",
+     3.16,
+     3.36
+    ],
+    [
+     "switch",
+     3.36,
+     3.68
+    ],
+    [
+     "makes",
+     3.68,
+     4.06
+    ],
+    [
+     "it",
+     4.06,
+     4.24
+    ],
+    [
+     "forget.",
+     4.24,
+     4.46
+    ]
+   ]
+  },
+  {
+   "id": "L02",
+   "t0": 5.4,
+   "t1": 9.616,
+   "text": "I broke it four ways. The last one shows what training actually builds.",
+   "sub": "I broke it four ways. The last one shows what training actually builds.",
+   "words": [
+    [
+     "I",
+     5.4,
+     5.48
+    ],
+    [
+     "broke",
+     5.48,
+     5.72
+    ],
+    [
+     "it",
+     5.72,
+     5.92
+    ],
+    [
+     "four",
+     5.92,
+     6.16
+    ],
+    [
+     "ways,",
+     6.16,
+     6.54
+    ],
+    [
+     "the",
+     6.9,
+     6.98
+    ],
+    [
+     "last",
+     6.98,
+     7.16
+    ],
+    [
+     "one",
+     7.16,
+     7.44
+    ],
+    [
+     "shows",
+     7.44,
+     7.7
+    ],
+    [
+     "what",
+     7.7,
+     8.02
+    ],
+    [
+     "training",
+     8.02,
+     8.32
+    ],
+    [
+     "actually",
+     8.32,
+     8.86
+    ],
+    [
+     "builds.",
+     8.86,
+     9.26
+    ]
+   ]
+  },
+  {
+   "id": "L03",
+   "t0": 10.8,
+   "t1": 13.234,
+   "text": "Break one: switch off a single attention head.",
+   "sub": "Break 1: switch off a single attention head.",
+   "words": [
+    [
+     "Break",
+     10.8,
+     10.9
+    ],
+    [
+     "1,",
+     10.9,
+     11.22
+    ],
+    [
+     "switch",
+     11.44,
+     11.62
+    ],
+    [
+     "off",
+     11.62,
+     11.84
+    ],
+    [
+     "a",
+     11.84,
+     11.98
+    ],
+    [
+     "single",
+     11.98,
+     12.2
+    ],
+    [
+     "attention",
+     12.2,
+     12.54
+    ],
+    [
+     "head.",
+     12.54,
+     13.04
+    ]
+   ]
+  },
+  {
+   "id": "L04",
+   "t0": 14.4,
+   "t1": 17.483,
+   "text": "It answers: Dave. A name that isn't even in the sentence.",
+   "sub": "It answers: Dave. A name that isn't even in the sentence.",
+   "words": [
+    [
+     "It",
+     14.4,
+     14.48
+    ],
+    [
+     "answers",
+     14.48,
+     14.78
+    ],
+    [
+     "Dave,",
+     14.78,
+     15.22
+    ],
+    [
+     "a",
+     15.6,
+     15.64
+    ],
+    [
+     "name",
+     15.64,
+     15.86
+    ],
+    [
+     "that",
+     15.86,
+     16.08
+    ],
+    [
+     "isn't",
+     16.08,
+     16.32
+    ],
+    [
+     "even",
+     16.32,
+     16.52
+    ],
+    [
+     "in",
+     16.52,
+     16.64
+    ],
+    [
+     "the",
+     16.64,
+     16.74
+    ],
+    [
+     "sentence.",
+     16.74,
+     17.08
+    ]
+   ]
+  },
+  {
+   "id": "L05",
+   "t0": 18.0,
+   "t1": 21.952,
+   "text": "Without that one head, it gets the name right only eight percent of the time.",
+   "sub": "Without that one head, it gets the name right only 8% of the time.",
+   "words": [
+    [
+     "Without",
+     18.0,
+     18.22
+    ],
+    [
+     "that",
+     18.22,
+     18.44
+    ],
+    [
+     "one",
+     18.44,
+     18.66
+    ],
+    [
+     "head,",
+     18.66,
+     18.94
+    ],
+    [
+     "it",
+     19.24,
+     19.28
+    ],
+    [
+     "gets",
+     19.28,
+     19.46
+    ],
+    [
+     "the",
+     19.46,
+     19.7
+    ],
+    [
+     "name",
+     19.7,
+     19.9
+    ],
+    [
+     "right",
+     19.9,
+     20.22
+    ],
+    [
+     "only",
+     20.22,
+     20.44
+    ],
+    [
+     "8",
+     20.44,
+     20.8
+    ],
+    [
+     "%",
+     20.8,
+     21.18
+    ],
+    [
+     "of",
+     21.18,
+     21.32
+    ],
+    [
+     "the",
+     21.32,
+     21.42
+    ],
+    [
+     "time.",
+     21.42,
+     21.68
+    ]
+   ]
+  },
+  {
+   "id": "L06",
+   "t0": 23.4,
+   "t1": 25.777,
+   "text": "Break two: turn off every feed-forward layer.",
+   "sub": "Break 2: turn off every feed-forward layer.",
+   "words": [
+    [
+     "Break",
+     23.4,
+     23.52
+    ],
+    [
+     "two,",
+     23.52,
+     23.76
+    ],
+    [
+     "turn",
+     23.98,
+     24.12
+    ],
+    [
+     "off",
+     24.12,
+     24.28
+    ],
+    [
+     "every",
+     24.28,
+     24.58
+    ],
+    [
+     "feed",
+     24.58,
+     24.86
+    ],
+    [
+     "forward",
+     24.86,
+     25.16
+    ],
+    [
+     "layer.",
+     25.16,
+     25.46
+    ]
+   ]
+  },
+  {
+   "id": "L07",
+   "t0": 26.4,
+   "t1": 29.839,
+   "text": "Ask for the capital of France, and it just repeats the last word.",
+   "sub": "Ask for the capital of France, and it just repeats the last word.",
+   "words": [
+    [
+     "Ask",
+     26.4,
+     26.64
+    ],
+    [
+     "for",
+     26.64,
+     26.78
+    ],
+    [
+     "the",
+     26.78,
+     26.88
+    ],
+    [
+     "capital",
+     26.88,
+     27.14
+    ],
+    [
+     "of",
+     27.14,
+     27.4
+    ],
+    [
+     "France,",
+     27.4,
+     27.7
+    ],
+    [
+     "and",
+     28.02,
+     28.08
+    ],
+    [
+     "it",
+     28.08,
+     28.16
+    ],
+    [
+     "just",
+     28.16,
+     28.3
+    ],
+    [
+     "repeats",
+     28.3,
+     28.68
+    ],
+    [
+     "the",
+     28.68,
+     29.0
+    ],
+    [
+     "last",
+     29.0,
+     29.18
+    ],
+    [
+     "word.",
+     29.18,
+     29.58
+    ]
+   ]
+  },
+  {
+   "id": "L08",
+   "t0": 30.6,
+   "t1": 34.669,
+   "text": "Attention still finds France. But nothing turns it into Paris anymore.",
+   "sub": "Attention still finds France. But nothing turns it into Paris anymore.",
+   "words": [
+    [
+     "Attention",
+     30.6,
+     30.82
+    ],
+    [
+     "still",
+     30.82,
+     31.32
+    ],
+    [
+     "finds",
+     31.32,
+     31.68
+    ],
+    [
+     "France,",
+     31.68,
+     32.16
+    ],
+    [
+     "but",
+     32.56,
+     32.68
+    ],
+    [
+     "nothing",
+     32.68,
+     32.86
+    ],
+    [
+     "turns",
+     32.86,
+     33.28
+    ],
+    [
+     "it",
+     33.28,
+     33.5
+    ],
+    [
+     "into",
+     33.5,
+     33.64
+    ],
+    [
+     "Paris",
+     33.64,
+     33.92
+    ],
+    [
+     "anymore.",
+     33.92,
+     34.28
+    ]
+   ]
+  },
+  {
+   "id": "L09",
+   "t0": 36.0,
+   "t1": 40.205,
+   "text": "Break three: cut the residual stream, the highway every layer writes into.",
+   "sub": "Break 3: cut the residual stream, the highway every layer writes into.",
+   "words": [
+    [
+     "Break",
+     36.0,
+     36.14
+    ],
+    [
+     "three,",
+     36.14,
+     36.46
+    ],
+    [
+     "cut",
+     36.7,
+     36.84
+    ],
+    [
+     "the",
+     36.84,
+     37.02
+    ],
+    [
+     "residual",
+     37.02,
+     37.34
+    ],
+    [
+     "stream,",
+     37.34,
+     37.78
+    ],
+    [
+     "the",
+     38.18,
+     38.24
+    ],
+    [
+     "highway",
+     38.24,
+     38.52
+    ],
+    [
+     "every",
+     38.52,
+     38.9
+    ],
+    [
+     "layer",
+     38.9,
+     39.22
+    ],
+    [
+     "writes",
+     39.22,
+     39.54
+    ],
+    [
+     "into.",
+     39.54,
+     39.94
+    ]
+   ]
+  },
+  {
+   "id": "L10",
+   "t0": 41.4,
+   "t1": 43.264,
+   "text": "It babbles. Every test collapses.",
+   "sub": "It babbles. Every test collapses.",
+   "words": [
+    [
+     "It",
+     41.4,
+     41.46
+    ],
+    [
+     "babbles",
+     41.46,
+     41.82
+    ],
+    [
+     "every",
+     41.82,
+     42.06
+    ],
+    [
+     "test",
+     42.06,
+     42.36
+    ],
+    [
+     "collapses.",
+     42.36,
+     42.8
+    ]
+   ]
+  },
+  {
+   "id": "L11",
+   "t0": 44.4,
+   "t1": 46.715,
+   "text": "Break four: same wiring, random weights.",
+   "sub": "Break 4: same wiring, random weights.",
+   "words": [
+    [
+     "Break",
+     44.4,
+     44.54
+    ],
+    [
+     "four",
+     44.54,
+     44.78
+    ],
+    [
+     "same",
+     44.78,
+     45.12
+    ],
+    [
+     "wiring",
+     45.12,
+     45.52
+    ],
+    [
+     "random",
+     45.52,
+     46.08
+    ],
+    [
+     "weights.",
+     46.08,
+     46.38
+    ]
+   ]
+  },
+  {
+   "id": "L12",
+   "t0": 48.0,
+   "t1": 51.76,
+   "text": "Every word looks at all twelve words almost equally. It's fog.",
+   "sub": "Every word looks at all 12 words almost equally. It's fog.",
+   "words": [
+    [
+     "Every",
+     48.0,
+     48.18
+    ],
+    [
+     "word",
+     48.18,
+     48.44
+    ],
+    [
+     "looks",
+     48.44,
+     48.66
+    ],
+    [
+     "at",
+     48.66,
+     48.86
+    ],
+    [
+     "all",
+     48.86,
+     49.1
+    ],
+    [
+     "12",
+     49.1,
+     49.44
+    ],
+    [
+     "words",
+     49.44,
+     49.7
+    ],
+    [
+     "almost",
+     49.7,
+     50.1
+    ],
+    [
+     "equally.",
+     50.1,
+     50.58
+    ],
+    [
+     "It's",
+     51.06,
+     51.22
+    ],
+    [
+     "fog.",
+     51.22,
+     51.42
+    ]
+   ]
+  },
+  {
+   "id": "L13",
+   "t0": 52.8,
+   "t1": 57.713,
+   "text": "Every model starts as this fog. Training is what turns it into these sharp lines.",
+   "sub": "Every model starts as this fog. Training is what turns it into these sharp lines.",
+   "words": [
+    [
+     "Every",
+     52.8,
+     53.0
+    ],
+    [
+     "model",
+     53.0,
+     53.3
+    ],
+    [
+     "starts",
+     53.3,
+     53.7
+    ],
+    [
+     "as",
+     53.7,
+     53.98
+    ],
+    [
+     "this",
+     53.98,
+     54.18
+    ],
+    [
+     "fog,",
+     54.18,
+     54.46
+    ],
+    [
+     "training",
+     54.88,
+     55.18
+    ],
+    [
+     "is",
+     55.18,
+     55.5
+    ],
+    [
+     "what",
+     55.5,
+     55.66
+    ],
+    [
+     "turns",
+     55.66,
+     55.94
+    ],
+    [
+     "it",
+     55.94,
+     56.22
+    ],
+    [
+     "into",
+     56.22,
+     56.4
+    ],
+    [
+     "these",
+     56.4,
+     56.6
+    ],
+    [
+     "sharp",
+     56.6,
+     56.9
+    ],
+    [
+     "lines.",
+     56.9,
+     57.3
+    ]
+   ]
+  },
+  {
+   "id": "L14",
+   "t0": 58.8,
+   "t1": 62.53,
+   "text": "Every switch is live in the lab. Break it yourself. Link in bio.",
+   "sub": "Every switch is live in the lab. Break it yourself. Link in bio.",
+   "words": [
+    [
+     "Every",
+     58.8,
+     58.98
+    ],
+    [
+     "switch",
+     58.98,
+     59.28
+    ],
+    [
+     "is",
+     59.28,
+     59.54
+    ],
+    [
+     "live",
+     59.54,
+     59.74
+    ],
+    [
+     "in",
+     59.74,
+     59.92
+    ],
+    [
+     "the",
+     59.92,
+     60.0
+    ],
+    [
+     "lab,",
+     60.0,
+     60.24
+    ],
+    [
+     "break",
+     60.52,
+     60.64
+    ],
+    [
+     "it",
+     60.64,
+     60.76
+    ],
+    [
+     "yourself,",
+     60.76,
+     61.02
+    ],
+    [
+     "link",
+     61.5,
+     61.64
+    ],
+    [
+     "in",
+     61.64,
+     61.86
+    ],
+    [
+     "bio.",
+     61.86,
+     62.08
+    ]
+   ]
+  }
+ ],
+ "cues": [
+  {
+   "t0": 0.5,
+   "text": "This tiny language model knows who you are.",
+   "line": "L01",
+   "t1": 3.12,
+   "w": [
+    [
+     "This",
+     0.5
+    ],
+    [
+     "tiny",
+     0.734
+    ],
+    [
+     "language",
+     0.968
+    ],
+    [
+     "model",
+     1.39
+    ],
+    [
+     "knows",
+     1.67
+    ],
+    [
+     "who",
+     1.951
+    ],
+    [
+     "you",
+     2.139
+    ],
+    [
+     "are.",
+     2.326
+    ]
+   ]
+  },
+  {
+   "t0": 3.16,
+   "text": "One switch makes it forget.",
+   "line": "L01",
+   "t1": 5.211,
+   "w": [
+    [
+     "One",
+     3.16
+    ],
+    [
+     "switch",
+     3.314
+    ],
+    [
+     "makes",
+     3.584
+    ],
+    [
+     "it",
+     3.816
+    ],
+    [
+     "forget.",
+     3.931
+    ]
+   ]
+  },
+  {
+   "t0": 5.4,
+   "text": "I broke it four ways.",
+   "line": "L02",
+   "t1": 6.86,
+   "w": [
+    [
+     "I",
+     5.4
+    ],
+    [
+     "broke",
+     5.469
+    ],
+    [
+     "it",
+     5.676
+    ],
+    [
+     "four",
+     5.78
+    ],
+    [
+     "ways.",
+     5.953
+    ]
+   ]
+  },
+  {
+   "t0": 6.9,
+   "text": "The last one shows what training actually builds.",
+   "line": "L02",
+   "t1": 10.116,
+   "w": [
+    [
+     "The",
+     6.9
+    ],
+    [
+     "last",
+     7.057
+    ],
+    [
+     "one",
+     7.253
+    ],
+    [
+     "shows",
+     7.41
+    ],
+    [
+     "what",
+     7.645
+    ],
+    [
+     "training",
+     7.841
+    ],
+    [
+     "actually",
+     8.194
+    ],
+    [
+     "builds.",
+     8.546
+    ]
+   ]
+  },
+  {
+   "t0": 10.8,
+   "text": "Break 1: switch off a single attention head.",
+   "line": "L03",
+   "t1": 13.734,
+   "w": [
+    [
+     "Break",
+     10.8
+    ],
+    [
+     "1:",
+     11.032
+    ],
+    [
+     "switch",
+     11.148
+    ],
+    [
+     "off",
+     11.419
+    ],
+    [
+     "a",
+     11.573
+    ],
+    [
+     "single",
+     11.651
+    ],
+    [
+     "attention",
+     11.921
+    ],
+    [
+     "head.",
+     12.308
+    ]
+   ]
+  },
+  {
+   "t0": 14.4,
+   "text": "It answers: Dave. A name that isn't even in the sentence.",
+   "line": "L04",
+   "t1": 17.96,
+   "w": [
+    [
+     "It",
+     14.4
+    ],
+    [
+     "answers:",
+     14.521
+    ],
+    [
+     "Dave.",
+     14.884
+    ],
+    [
+     "A",
+     15.126
+    ],
+    [
+     "name",
+     15.207
+    ],
+    [
+     "that",
+     15.409
+    ],
+    [
+     "isn't",
+     15.61
+    ],
+    [
+     "even",
+     15.852
+    ],
+    [
+     "in",
+     16.054
+    ],
+    [
+     "the",
+     16.175
+    ],
+    [
+     "sentence.",
+     16.337
+    ]
+   ]
+  },
+  {
+   "t0": 18.0,
+   "text": "Without that one head,",
+   "line": "L05",
+   "t1": 19.24,
+   "w": [
+    [
+     "Without",
+     18.0
+    ],
+    [
+     "that",
+     18.431
+    ],
+    [
+     "one",
+     18.701
+    ],
+    [
+     "head,",
+     18.917
+    ]
+   ]
+  },
+  {
+   "t0": 19.28,
+   "text": "it gets the name right only 8% of the time.",
+   "line": "L05",
+   "t1": 22.452,
+   "w": [
+    [
+     "it",
+     19.28
+    ],
+    [
+     "gets",
+     19.426
+    ],
+    [
+     "the",
+     19.669
+    ],
+    [
+     "name",
+     19.864
+    ],
+    [
+     "right",
+     20.107
+    ],
+    [
+     "only",
+     20.399
+    ],
+    [
+     "8%",
+     20.642
+    ],
+    [
+     "of",
+     20.788
+    ],
+    [
+     "the",
+     20.934
+    ],
+    [
+     "time.",
+     21.128
+    ]
+   ]
+  },
+  {
+   "t0": 23.4,
+   "text": "Break 2: turn off every feed-forward layer.",
+   "line": "L06",
+   "t1": 26.277,
+   "w": [
+    [
+     "Break",
+     23.4
+    ],
+    [
+     "2:",
+     23.64
+    ],
+    [
+     "turn",
+     23.76
+    ],
+    [
+     "off",
+     23.96
+    ],
+    [
+     "every",
+     24.12
+    ],
+    [
+     "feed-forward",
+     24.36
+    ],
+    [
+     "layer.",
+     24.88
+    ]
+   ]
+  },
+  {
+   "t0": 26.4,
+   "text": "Ask for the capital of France,",
+   "line": "L07",
+   "t1": 27.98,
+   "w": [
+    [
+     "Ask",
+     26.4
+    ],
+    [
+     "for",
+     26.529
+    ],
+    [
+     "the",
+     26.658
+    ],
+    [
+     "capital",
+     26.787
+    ],
+    [
+     "of",
+     27.045
+    ],
+    [
+     "France,",
+     27.142
+    ]
+   ]
+  },
+  {
+   "t0": 28.02,
+   "text": "and it just repeats the last word.",
+   "line": "L07",
+   "t1": 30.339,
+   "w": [
+    [
+     "and",
+     28.02
+    ],
+    [
+     "it",
+     28.153
+    ],
+    [
+     "just",
+     28.252
+    ],
+    [
+     "repeats",
+     28.418
+    ],
+    [
+     "the",
+     28.683
+    ],
+    [
+     "last",
+     28.815
+    ],
+    [
+     "word.",
+     28.981
+    ]
+   ]
+  },
+  {
+   "t0": 30.6,
+   "text": "Attention still finds France.",
+   "line": "L08",
+   "t1": 32.52,
+   "w": [
+    [
+     "Attention",
+     30.6
+    ],
+    [
+     "still",
+     30.96
+    ],
+    [
+     "finds",
+     31.176
+    ],
+    [
+     "France.",
+     31.392
+    ]
+   ]
+  },
+  {
+   "t0": 32.56,
+   "text": "But nothing turns it into Paris anymore.",
+   "line": "L08",
+   "t1": 35.169,
+   "w": [
+    [
+     "But",
+     32.56
+    ],
+    [
+     "nothing",
+     32.693
+    ],
+    [
+     "turns",
+     32.958
+    ],
+    [
+     "it",
+     33.157
+    ],
+    [
+     "into",
+     33.257
+    ],
+    [
+     "Paris",
+     33.422
+    ],
+    [
+     "anymore.",
+     33.621
+    ]
+   ]
+  },
+  {
+   "t0": 36.0,
+   "text": "Break 3:",
+   "line": "L09",
+   "t1": 36.66,
+   "w": [
+    [
+     "Break",
+     36.0
+    ],
+    [
+     "3:",
+     36.133
+    ]
+   ]
+  },
+  {
+   "t0": 36.7,
+   "text": "cut the residual stream,",
+   "line": "L09",
+   "t1": 38.14,
+   "w": [
+    [
+     "cut",
+     36.7
+    ],
+    [
+     "the",
+     36.802
+    ],
+    [
+     "residual",
+     36.905
+    ],
+    [
+     "stream,",
+     37.135
+    ]
+   ]
+  },
+  {
+   "t0": 38.18,
+   "text": "the highway every layer writes into.",
+   "line": "L09",
+   "t1": 40.705,
+   "w": [
+    [
+     "the",
+     38.18
+    ],
+    [
+     "highway",
+     38.327
+    ],
+    [
+     "every",
+     38.621
+    ],
+    [
+     "layer",
+     38.842
+    ],
+    [
+     "writes",
+     39.062
+    ],
+    [
+     "into.",
+     39.319
+    ]
+   ]
+  },
+  {
+   "t0": 41.4,
+   "text": "It babbles. Every test collapses.",
+   "line": "L10",
+   "t1": 43.764,
+   "w": [
+    [
+     "It",
+     41.4
+    ],
+    [
+     "babbles.",
+     41.485
+    ],
+    [
+     "Every",
+     41.739
+    ],
+    [
+     "test",
+     41.908
+    ],
+    [
+     "collapses.",
+     42.049
+    ]
+   ]
+  },
+  {
+   "t0": 44.4,
+   "text": "Break 4: same wiring, random weights.",
+   "line": "L11",
+   "t1": 47.215,
+   "w": [
+    [
+     "Break",
+     44.4
+    ],
+    [
+     "4:",
+     44.665
+    ],
+    [
+     "same",
+     44.798
+    ],
+    [
+     "wiring,",
+     45.019
+    ],
+    [
+     "random",
+     45.373
+    ],
+    [
+     "weights.",
+     45.682
+    ]
+   ]
+  },
+  {
+   "t0": 48.0,
+   "text": "Every word looks at all 12 words almost equally. It's fog.",
+   "line": "L12",
+   "t1": 52.26,
+   "w": [
+    [
+     "Every",
+     48.0
+    ],
+    [
+     "word",
+     48.327
+    ],
+    [
+     "looks",
+     48.6
+    ],
+    [
+     "at",
+     48.928
+    ],
+    [
+     "all",
+     49.092
+    ],
+    [
+     "12",
+     49.31
+    ],
+    [
+     "words",
+     49.474
+    ],
+    [
+     "almost",
+     49.801
+    ],
+    [
+     "equally.",
+     50.183
+    ],
+    [
+     "It's",
+     50.674
+    ],
+    [
+     "fog.",
+     50.947
+    ]
+   ]
+  },
+  {
+   "t0": 52.8,
+   "text": "Every model starts as this fog.",
+   "line": "L13",
+   "t1": 54.84,
+   "w": [
+    [
+     "Every",
+     52.8
+    ],
+    [
+     "model",
+     53.059
+    ],
+    [
+     "starts",
+     53.317
+    ],
+    [
+     "as",
+     53.619
+    ],
+    [
+     "this",
+     53.749
+    ],
+    [
+     "fog.",
+     53.964
+    ]
+   ]
+  },
+  {
+   "t0": 54.88,
+   "text": "Training is what turns it into these sharp lines.",
+   "line": "L13",
+   "t1": 58.213,
+   "w": [
+    [
+     "Training",
+     54.88
+    ],
+    [
+     "is",
+     55.244
+    ],
+    [
+     "what",
+     55.365
+    ],
+    [
+     "turns",
+     55.567
+    ],
+    [
+     "it",
+     55.809
+    ],
+    [
+     "into",
+     55.93
+    ],
+    [
+     "these",
+     56.132
+    ],
+    [
+     "sharp",
+     56.375
+    ],
+    [
+     "lines.",
+     56.617
+    ]
+   ]
+  },
+  {
+   "t0": 58.8,
+   "text": "Every switch is live in the lab.",
+   "line": "L14",
+   "t1": 60.6,
+   "w": [
+    [
+     "Every",
+     58.8
+    ],
+    [
+     "switch",
+     59.113
+    ],
+    [
+     "is",
+     59.478
+    ],
+    [
+     "live",
+     59.634
+    ],
+    [
+     "in",
+     59.895
+    ],
+    [
+     "the",
+     60.051
+    ],
+    [
+     "lab.",
+     60.259
+    ]
+   ]
+  },
+  {
+   "t0": 60.64,
+   "text": "Break it yourself. Link in bio.",
+   "line": "L14",
+   "t1": 63.03,
+   "w": [
+    [
+     "Break",
+     60.64
+    ],
+    [
+     "it",
+     60.869
+    ],
+    [
+     "yourself.",
+     60.983
+    ],
+    [
+     "Link",
+     61.364
+    ],
+    [
+     "in",
+     61.555
+    ],
+    [
+     "bio.",
+     61.669
+    ]
+   ]
+  }
+ ]
+}

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>I broke a language model</title>
+<style>
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText.ttf); font-weight: 400 700; }
+@font-face { font-family: STIX; src: url(fonts/STIXTwoText-Italic.ttf); font-style: italic; font-weight: 400 700; }
+@font-face { font-family: JBM; src: url(fonts/JetBrainsMono.ttf); font-weight: 100 800; }
+:root { --bg: #010402; --beam: #4DFF88; --ui: #8DFFB0; --hot: #E6FFEC; --amber: #FFB547; --cyan: #5CE1FF; --red: #FF5C8A; --dim: #8DFFB099; --line: #8DFFB02e; }
+html, body { margin: 0; background: var(--bg); overflow: hidden; }
+#film { position: relative; width: 1080px; height: 1920px; overflow: hidden; color: var(--ui); font-family: JBM, monospace;
+  background: radial-gradient(ellipse at 50% 45%, #0B241288 0%, transparent 65%), repeating-linear-gradient(0deg, transparent 0 95px, #8DFFB00b 95px 96px), repeating-linear-gradient(90deg, transparent 0 95px, #8DFFB00b 95px 96px), var(--bg); }
+body.fit { height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; }
+body.fit #film { transform-origin: center; flex: none; }
+
+/* ── HUD ── */
+#tag { position: absolute; left: 72px; top: 70px; font: 600 26px JBM; color: var(--dim); letter-spacing: .04em; }
+#chips { position: absolute; left: 72px; right: 72px; top: 118px; display: flex; gap: 12px; }
+.chip { flex: 1; text-align: center; font: 600 22px JBM; padding: 10px 0; border: 1.5px solid var(--line); border-radius: 999px; color: var(--dim); opacity: 0; letter-spacing: .03em; }
+.chip.on { color: var(--bg); background: var(--amber); border-color: var(--amber); box-shadow: 0 0 22px #FFB54777; }
+.chip.done { color: var(--amber); border-color: #FFB54788; }
+#prog { position: absolute; left: 72px; right: 72px; top: 186px; height: 3px; background: var(--line); }
+#prog i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--beam); box-shadow: 0 0 10px var(--beam); }
+#status { position: absolute; left: 72px; right: 72px; top: 214px; font: 600 30px JBM; color: var(--hot); white-space: nowrap; }
+#status b { color: var(--red); } #status em { font-style: normal; color: var(--beam); }
+#scores { position: absolute; left: 72px; top: 278px; width: 440px; display: grid; gap: 14px; }
+.sc { display: grid; grid-template-columns: 104px 1fr 76px; align-items: center; gap: 12px; font: 600 24px JBM; }
+.sc span { color: var(--dim); } .sc .tr { height: 16px; background: #8DFFB01a; border-radius: 8px; position: relative; overflow: hidden; }
+.sc .tr i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--beam); border-radius: 8px; box-shadow: 0 0 12px #4DFF8888; }
+.sc b { text-align: right; color: var(--hot); } .sc.low .tr i { background: var(--red); box-shadow: 0 0 12px #FF5C8A88; } .sc.low b { color: var(--red); }
+#scores .hd, #ans .hd { font: 500 19px JBM; color: var(--dim); letter-spacing: .08em; margin-bottom: -4px; }
+#ans { position: absolute; right: 72px; top: 270px; width: 410px; box-sizing: border-box; border: 1.5px solid #E6FFEC55; border-radius: 14px; padding: 14px 18px; background: #010402cc; }
+#ans .q { font: 500 20px JBM; color: var(--dim); margin: 6px 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ans .row { display: grid; grid-template-columns: 100px 1fr 96px; gap: 10px; align-items: center; font: 600 26px JBM; color: var(--hot); margin: 4px 0; }
+#ans .row i { height: 12px; border-radius: 6px; background: var(--hot); box-shadow: 0 0 10px #E6FFEC88; }
+#ans .row em { font-style: normal; text-align: right; }
+#ans .row:first-of-type { font-size: 34px; }
+#ans.bad { border-color: var(--red); box-shadow: 0 0 26px #FF5C8A55; } #ans.bad .row:first-of-type { color: var(--red); } #ans.bad .row:first-of-type i { background: var(--red); }
+
+#stage { position: absolute; left: 0; top: 480px; width: 1080px; height: 920px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 70px, #000 calc(100% - 50px), transparent); mask-image: linear-gradient(to bottom, transparent 0, #000 70px, #000 calc(100% - 50px), transparent); }
+#stage canvas { display: block; }
+.labels { position: absolute; inset: 0; z-index: 0; }
+.lbl { font-size: 20px; color: var(--ui); white-space: nowrap; pointer-events: none; text-shadow: 0 0 8px #010402, 0 0 3px #010402; font-family: JBM, monospace; }
+.lbl.tok { display: grid; justify-items: center; font-size: 26px; color: var(--hot); }
+.lbl.tok i { display: none; }
+.lbl.tok.on b { color: var(--bg); background: var(--beam); padding: 0 8px; border-radius: 4px; }
+.lbl.side { text-align: right; font-size: 20px; } .lbl.side .in { transform: translateX(-50%); }
+.lbl.side span { display: none; } .lbl.side.small, .lbl.side.dim { display: none; } .lbl.side.amber { color: var(--amber); }
+.lbl.blk { font-family: STIX, serif; font-size: 34px; color: var(--beam); }
+.lbl.head { color: var(--cyan); font-size: 20px; }
+.lbl.att { color: var(--cyan); font-size: 22px; background: #010402d9; padding: 1px 8px; border-radius: 4px; }
+.lbl.att i { color: var(--hot); font-style: normal; }
+.lbl.card, .lbl.pred { display: none; }
+
+#flash { position: absolute; inset: 0; background: #FF5C8A; mix-blend-mode: screen; opacity: 0; pointer-events: none; }
+#cap { position: absolute; left: 70px; right: 70px; top: 1420px; font: 500 52px/1.22 STIX, serif; color: #E6FFEC40; }
+#cap b { font-weight: 500; } #cap .s { color: var(--hot); } #cap .c { color: var(--amber); text-shadow: 0 0 16px #FFB54788; }
+#cap::before { content: ''; position: absolute; left: -22px; top: 8px; bottom: 8px; width: 4px; background: var(--beam); box-shadow: 0 0 10px var(--beam); }
+#end { z-index: 3; position: absolute; left: 90px; right: 90px; top: 560px; padding: 40px 44px; border: 1.5px solid var(--beam); border-radius: 18px; background: #010402ee; opacity: 0; box-shadow: 0 0 40px #4DFF8833; }
+#end h2 { margin: 0 0 22px; font: 600 54px STIX, serif; color: var(--hot); }
+#end .ep { display: grid; grid-template-columns: 130px 1fr; gap: 16px; font: 500 28px JBM; color: var(--dim); padding: 12px 0; border-top: 1px solid var(--line); }
+#end .ep b { color: var(--ui); } #end .ep.here { color: var(--hot); } #end .ep.here b { color: var(--amber); } #end .ep.next b { color: var(--beam); }
+#end .cta { margin-top: 26px; font: italic 500 48px STIX, serif; color: var(--beam); }
+#end .url { margin-top: 10px; font: 600 26px JBM; color: var(--ui); }
+
+#play { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1.6vh; text-align: center; z-index: 10; }
+#play[hidden] { display: none; }
+#play button { font: 600 clamp(15px, 2.2vh, 22px) JBM, monospace; color: #010402; background: #4DFF88; border: 0; border-radius: 1.2vh; padding: 1.6vh 3vh; box-shadow: 0 0 3vh #4DFF8866; cursor: pointer; }
+#play a { font: 500 clamp(12px, 1.7vh, 17px) JBM, monospace; color: #8DFFB0; background: #010402e6; padding: .7vh 1.6vh; border-radius: 999px; }
+</style>
+<script type="importmap">{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+</head>
+<body>
+<div id="film">
+  <div id="tag">@complex2vec · EP 03</div>
+  <div id="chips"><div class="chip">1 HEAD</div><div class="chip">2 FEED-FWD</div><div class="chip">3 RESIDUAL</div><div class="chip">4 WEIGHTS</div></div>
+  <div id="prog"><i></i></div>
+  <div id="status"></div>
+  <div id="scores"><div class="hd">TEST SCORE · 136 SENTENCES</div></div>
+  <div id="ans"><div class="hd">NEXT WORD</div><div class="q"></div></div>
+  <div id="stage"></div>
+  <div id="flash"></div>
+  <div id="end">
+    <h2>Inside the Transformer</h2>
+    <div class="ep"><b>EP 00</b>the whole map, in four stops</div>
+    <div class="ep"><b>EP 02</b>12 heads for the price of 1</div>
+    <div class="ep here"><b>EP 03</b>you are here: break it</div>
+    <div class="ep next"><b>EP 04</b>next: what training actually builds</div>
+    <div class="cta">Break it yourself → link in bio</div>
+    <div class="url">complex2vec.github.io/lab</div>
+  </div>
+  <div id="cap"></div>
+</div>
+<div id="play" hidden><button id="playBtn" type="button">▶ Play with sound</button><a href="../lab/">or break it yourself in the lab →</a></div>
+<script type="module">
+import { Scene3D } from './lab/scene.js';
+import { loadWeights, randomWeights, forward, DEFAULT_OPT, testSet, score, softmax, topk } from './lab/model.js';
+
+const QS = new URLSearchParams(location.search), $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), lerp = (a, b, u) => a + (b - a) * u;
+const ss = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const flash = (t, t0, d = .35) => t >= t0 ? clamp(1 - (t - t0) / d) : 0;
+
+const [ix, wj, TL] = await Promise.all(['lab/models/index.json', 'lab/models/L2H2D64-rope.json', 'timeline.json'].map(u => fetch(u).then(r => r.json())));
+const M = TL.marks, V = ix.vocab, S2I = Object.fromEntries(V.map((v, i) => [v, i]));
+const WT = { trained: loadWeights(wj), random: randomWeights({ L: 2, h: 2, d: 64, pe: 'rope', ffn: 4, V: V.length, maxlen: ix.maxlen, seed: 1 }) };
+const NAME = 'i am alice . you are bob . who am i ?', CAP = 'the capital of france is';
+
+// ── what the model is doing at each moment (each state starts at its time) ──
+const base = (text, extra = {}) => ({ text, w: 'trained', opt: {}, sel: null, status: '2 blocks · 2 heads · <em>trained</em>', ...extra });
+const ST = [
+  [0, base(NAME)],
+  [M.b1off, base(NAME, { opt: { mute: { '0.1': true } }, sel: { kind: 'head', b: 0, j: 1 }, status: 'block 1 · head 2: <b>OFF</b>' })],
+  [M.b1end + .2, base(NAME)],
+  [M.b2, base(CAP)],
+  [M.b2off, base(CAP, { opt: { ffnOff: { 0: true, 1: true } }, status: 'feed-forward, both blocks: <b>OFF</b>' })],
+  [M.b2end + .2, base(CAP)],
+  [M.b3, base(NAME)],
+  [M.cut, base(NAME, { opt: { residOff: { '0.attn': true } }, sel: { kind: 'add', b: 0, which: 'attn' }, status: 'residual stream, block 1: <b>CUT</b>' })],
+  [M.b3end + .2, base(NAME)],
+  [M.random, base(NAME, { w: 'random', status: 'weights: <b>RANDOM</b> (never trained)' })],
+  [M.training2, base(NAME, { status: 'weights: <em>trained</em>' })],
+];
+const SET = testSet(ix);
+for (const [, s] of ST) {
+  const opt = Object.assign(DEFAULT_OPT(), s.opt), ids = s.text.split(' ').map(x => S2I[x]);
+  s.optFull = opt; s.ids = ids;
+  s.score = score(WT[s.w], ix, SET, opt);
+  s.top = topk(softmax([...forward(WT[s.w], ids, opt, false).logits.at(-1)]), 3, V);
+  s.key = JSON.stringify([s.text, s.w, s.opt]);
+}
+const stateIdx = t => { let i = 0; while (i + 1 < ST.length && ST[i + 1][0] <= t) i++; return i; };
+
+// ── 3D: the lab's own scene, drawn frame by frame ──
+const scene = new Scene3D($('stage'), { manual: true });
+let built = null;
+function build(s) {
+  const state = { opt: s.optFull, sel: s.sel, focus: s.ids.length - 1, showVec: true };
+  const w = WT[s.w], tr = forward(w, s.ids, s.optFull);
+  scene.build({ tr, w, state, vocab: V }); built = s.key;
+}
+// camera shots, from the scene's own dimensions
+const LAY = { Y_B0: 3.5, BH: 7.4, Z_BR: -1.5, Z_HEAD: .95 };
+function pose(name) {
+  const { W, YF, h } = scene.dims, span = Math.max(W, 9);
+  if (name === 'all') { const H = YF + 5, d = Math.max(H * 1.28, W * 1.15) + 6; return { tgt: [-W * .09, H / 2 - .9, -1.6], pos: [d * .3 - W * .09, H / 2 + d * .2, -1.6 + d * .92] }; }
+  const z = LAY.Z_BR - h * LAY.Z_HEAD / 2;
+  if (name === 'attn0') { const y = LAY.Y_B0 + 2.25; return { tgt: [0, y, z], pos: [span * .28, y + span * .42, z + span * 1.08 + 3] }; }
+  if (name === 'block0') { const y = LAY.Y_B0 + LAY.BH / 2; return { tgt: [0, y, z], pos: [span * .5, y + span * .32, z + span * 1.25 + 5] }; }
+}
+const SHOTS = [[0, 'all'], [M.b1switch - .3, 'attn0'], [M.b1end + .1, 'all'], [M.finds - .3, 'attn0'], [M.b2end + .1, 'all'],
+  [M.cut - .5, 'block0'], [M.b3end + .1, 'all'], [M.random - .4, 'attn0'], [M.cta - .2, 'all']];
+function camAt(t) {
+  let i = 0; while (i + 1 < SHOTS.length && SHOTS[i + 1][0] <= t) i++;
+  const cur = pose(SHOTS[i][1]), prev = i ? pose(SHOTS[i - 1][1]) : cur, u = ss((t - SHOTS[i][0]) / 1.1);
+  const tgt = cur.tgt.map((v, k) => lerp(prev.tgt[k], v, u)), pos = cur.pos.map((v, k) => lerp(prev.pos[k], v, u));
+  const a = .07 * Math.sin(t * 2 * Math.PI / 16), dx = pos[0] - tgt[0], dz = pos[2] - tgt[2];   // slow drift so the 3D reads as 3D
+  return { tgt, pos: [tgt[0] + dx * Math.cos(a) - dz * Math.sin(a), pos[1], tgt[2] + dx * Math.sin(a) + dz * Math.cos(a)] };
+}
+
+// ── HUD ──
+const SC = ['capital', 'name', 'agree'];
+$('scores').insertAdjacentHTML('beforeend', SC.map(k => `<div class="sc" id="sc-${k}"><span>${k}</span><div class="tr"><i></i></div><b></b></div>`).join(''));
+for (let i = 0; i < 3; i++) $('ans').insertAdjacentHTML('beforeend', '<div class="row"><span></span><i></i><em></em></div>');
+const chips = [...document.querySelectorAll('.chip')], BREAKS = [M.b1, M.b2, M.b3, M.b4, M.cta];
+const pct = p => (p * 100).toFixed(p > .995 || p < .0005 ? 0 : 1) + '%';
+
+function hud(t) {
+  const i = stateIdx(t), s = ST[i][1], p = i ? ST[i - 1][1] : s, u = ss((t - ST[i][0]) / .9);
+  for (const k of SC) {
+    const v = lerp(p.score[k], s.score[k], u), el = $('sc-' + k);
+    el.querySelector('i').style.width = (v * 100) + '%'; el.querySelector('b').textContent = Math.round(v * 100) + '%';
+    el.classList.toggle('low', v < .6);
+  }
+  const q = s.text.split(' ').slice(-4).join(' ');
+  $('ans').querySelector('.q').textContent = `“…${q}” →`;
+  const rows = $('ans').querySelectorAll('.row');
+  s.top.forEach((o, k) => { rows[k].children[0].textContent = o.w; rows[k].children[1].style.width = Math.max(2, o.p * 100) + '%'; rows[k].children[2].textContent = pct(o.p); });
+  const good = { alice: 1, paris: 1 }[s.top[0].w];
+  $('ans').classList.toggle('bad', !good);
+  const pulse = Math.max(flash(t, M.dave, .6), flash(t, M.repeats, .6), flash(t, M.babbles, .6), flash(t, M.fog, .6), flash(t, M.sharp, .6));
+  const jit = (t > M.forget && t < M.forget + .45) ? Math.sin(t * 173) * 9 : 0;                 // the hook's glitch: a hint of what is coming
+  $('ans').style.transform = `translateX(${jit}px) scale(${1 + .05 * pulse})`;
+  $('status').innerHTML = s.status;
+  const sec = BREAKS.findLastIndex(b => t >= b);
+  chips.forEach((c, k) => { c.style.opacity = ss((t - M.chips - k * .15) / .3); c.classList.toggle('on', sec === k); c.classList.toggle('done', sec > k); });
+  $('prog').firstElementChild.style.width = (t / TL.dur * 100) + '%';
+  $('flash').style.opacity = .35 * Math.max(...[M.b1off, M.b2off, M.cut, M.random].map(x => flash(t, x, .3)), flash(t, M.forget, .25) * .6);
+  $('end').style.opacity = ss((t - M.lab + .2) / .6);
+  caption(t);
+}
+function caption(t) {
+  const c = TL.cues.find(c => t >= c.t0 && t < c.t1);
+  if (!c) { $('cap').innerHTML = ''; $('cap').style.opacity = 0; return; }
+  $('cap').style.opacity = 1;
+  $('cap').innerHTML = c.w.map(([w, ts], k) => { const nx = c.w[k + 1] ? c.w[k + 1][1] : c.t1; return `<b class="${t >= nx ? 's' : t >= ts ? 'c' : ''}">${w}</b>`; }).join(' ');
+}
+
+function render(t) {
+  const s = ST[stateIdx(t)][1];
+  if (built !== s.key) build(s);
+  hud(t);
+  scene.frame(t, camAt(t));
+}
+
+// ── sound cues for mix.py ──
+function events() {
+  const E = [], ev = (t, type, o = {}) => E.push({ t: +t.toFixed(3), type, ...o });
+  ev(0, 'relay'); ev(M.forget, 'glitch');
+  chips.forEach((_, k) => ev(M.chips + k * .15, 'chip', { k }));
+  [M.b1, M.b2, M.b3, M.b4].forEach((x, k) => ev(x, 'stop', { k }));
+  for (const x of [M.b1off, M.b2off, M.cut, M.random]) ev(x, 'off');
+  for (const x of [M.dave, M.repeats, M.babbles, M.fog]) ev(x, 'wrong');
+  for (const x of [M.b1end + .2, M.b2end + .2, M.b3end + .2]) ev(x, 'restore');
+  ev(M.training2, 'clear'); ev(M.sharp, 'ping');
+  SHOTS.slice(1).forEach(([x]) => ev(x, 'whoosh', { d: 1.0 }));
+  for (let i = 0; i < 5; i++) ev(M.lab - .1 + i * .12, 'tick', { v: .7 });
+  return E.sort((a, b) => a.t - b.t);
+}
+
+if (!navigator.webdriver) { const g = document.createElement('script'); g.async = true; g.src = 'https://gc.zgo.at/count.js'; g.dataset.goatcounter = 'https://complex2vec.goatcounter.com/count'; document.head.appendChild(g); }
+await document.fonts.load('500 52px STIX'); await document.fonts.load('600 26px JBM');
+window.DUR = TL.dur; window.EV = events(); window.TEXTS = () => []; window.render = render; window.READY = true;
+if (!navigator.webdriver && !QS.has('still')) watch(); else render(+QS.get('t') || 0);
+
+function watch() {
+  document.body.classList.add('fit');
+  const film = $('film'), fit = () => { const k = Math.min(innerWidth / 1080, innerHeight / 1920); film.style.transform = `scale(${k})`; film.style.margin = `${(innerHeight - 1920) / 2}px ${(innerWidth - 1080) / 2}px`; };
+  fit(); addEventListener('resize', fit);
+  const box = $('play'), btn = $('playBtn'), au = new Audio('audio.m4a'); au.preload = 'auto';
+  let silent = false, t0 = 0, pos = 0, running = false;
+  au.addEventListener('error', () => { silent = true; });
+  const now = () => silent ? pos + (performance.now() - t0) / 1000 : au.currentTime;
+  const frame = () => { if (!running) return; const t = now(); if (t >= TL.dur || (!silent && au.ended)) { stop('↻ Watch again'); pos = 0; render(TL.dur - .01); return; } render(t); requestAnimationFrame(frame); };
+  const start = () => { box.hidden = true; running = true; if (au.ended || au.currentTime >= TL.dur - .05) au.currentTime = 0;
+    if (silent) { t0 = performance.now(); requestAnimationFrame(frame); return; }
+    au.play().then(() => requestAnimationFrame(frame)).catch(() => { silent = true; t0 = performance.now(); requestAnimationFrame(frame); }); };
+  const stop = label => { if (silent) pos = now(); else au.pause(); running = false; btn.textContent = label; box.hidden = false; };
+  btn.onclick = start; film.addEventListener('click', () => running ? stop('▶ Resume') : start());
+  render(M.poster); box.hidden = false;
+}
+</script>
+</body>
+</html>
