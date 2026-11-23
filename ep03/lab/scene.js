@@ -89,7 +89,7 @@ export class Scene3D {
 
   clear() {
     this.root.traverse(ob => { if (ob.geometry) ob.geometry.dispose(); if (ob.material) ob.material.dispose(); if (ob.element) ob.element.remove(); });
-    this.scene.remove(this.root); this.root = new THREE.Group(); this.scene.add(this.root); this.pickables = []; this.parts = []; this.glowers = []; this.flows = [];
+    this.scene.remove(this.root); this.root = new THREE.Group(); this.scene.add(this.root); this.pickables = []; this.parts = []; this.glowers = []; this.flows = []; this.marks = [];
     let a = 12345; this.rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let x = a; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };   // seeded: same dots on every render
   }
 
@@ -139,8 +139,8 @@ export class Scene3D {
       this.line([[X(t), -.05, 0], [X(t), yRes0, 0]], COL.green, .35);
       for (let k = 0; k < resY.length - 1; k++) {
         const off = segOff(k + 1), y0 = resY[k], y1 = resY[k + 1];
-        const g = new THREE.CylinderGeometry(t === focus ? .06 : .04, t === focus ? .06 : .04, y1 - y0 - .3, 6);
-        this.mesh(g, this.mat(off ? COL.red : COL.green, off ? .2 : (t === focus ? 1 : .68)), [X(t), (y0 + y1) / 2, 0], { kind: 'lane', t, k });
+        const r = off && state.loud ? .09 : t === focus ? .06 : .04, g = new THREE.CylinderGeometry(r, r, y1 - y0 - .3, 6);
+        this.mesh(g, this.mat(off ? COL.red : COL.green, off ? (state.loud ? .95 : .2) : (t === focus ? 1 : .68)), [X(t), (y0 + y1) / 2, 0], { kind: 'lane', t, k });
       }
     });
 
@@ -187,8 +187,9 @@ export class Scene3D {
         this.line([[x, y0 + o.add1 + .25, 0], [x, y0 + o.add1 + .25, Z_BR], [x, y0 + o.ffn - o.ffnH / 2, Z_BR]], COL.green, .38);
         this.disc(x, y0 + o.ln2, Z_BR, lnOff2, { kind: 'ln', b, n: 2 });
         const g = new THREE.BoxGeometry(.95, o.ffnH, 1.1), lvl = ffnOff ? .06 : .16 + .5 * act[t] / amax;
-        glow(this.mesh(g, this.mat(ffnOff ? COL.grey : COL.amber, sel ? Math.min(1, lvl + .15) : lvl), [x, y0 + o.ffn, Z_BR - .2], { kind: 'ffn', b, t }), y0 + o.ffn, lvl);
-        this.edges(g, ffnOff ? COL.grey : COL.amber, sel ? 1 : .75, [x, y0 + o.ffn, Z_BR - .2]);
+        const offC = state.loud ? COL.red : COL.grey;
+        glow(this.mesh(g, this.mat(ffnOff ? offC : COL.amber, sel ? Math.min(1, lvl + .15) : lvl), [x, y0 + o.ffn, Z_BR - .2], { kind: 'ffn', b, t }), y0 + o.ffn, lvl);
+        this.edges(g, ffnOff ? offC : COL.amber, ffnOff && state.loud ? .95 : sel ? 1 : .75, [x, y0 + o.ffn, Z_BR - .2]);
         this.line([[x, y0 + o.ffn + o.ffnH / 2, Z_BR], [x, y0 + o.add2, Z_BR], [x, y0 + o.add2, 0]], ffnOff ? COL.grey : COL.amber, .55);
         this.addRing(x, y0 + o.add2, opt.residOff[`${b}.ffn`] ? COL.red : COL.green, { kind: 'add', b, which: 'ffn' });
         if (!ffnOff) {
@@ -222,10 +223,28 @@ export class Scene3D {
 
     this.particles(T, X, resY, YF);
     this.flowPoints();
+    if (state.mark) this.drawMark(state.mark);
     this.resetCamera(false);
   }
 
   lit(m, y) { this.glowers.push({ m, y, base: m.material.opacity }); return m; }
+
+  /** Film/teaching overlay: a box around one part with a big tag. mark = { target, tone: 'warn' | 'off', text }.
+   *  tone 'info' (cyan, steady) points at something that still works.
+ *  target: { kind: 'head', b, j } | { kind: 'ffn' } (every block) | { kind: 'resid', b } | { kind: 'attnAll' } */
+  drawMark({ target, tone, text }) {
+    const { W, L, h, T, X } = this.dims, { Y_B0, BH, Z_BR, Z_HEAD } = LAYOUT, col = tone === 'off' ? COL.red : tone === 'info' ? COL.cyan : COL.amber, boxes = [];
+    const yb = b => Y_B0 + b * BH, zh = j => Z_BR - .3 - j * Z_HEAD;
+    if (target.kind === 'head') boxes.push([[0, yb(target.b) + (o.attB + o.attT) / 2, zh(target.j)], [W + 1.1, o.attT - o.attB + .9, .35]]);
+    if (target.kind === 'attnAll') for (let b = 0; b < L; b++) boxes.push([[0, yb(b) + (o.attB + o.attT) / 2, Z_BR - .3 - (h - 1) * Z_HEAD / 2], [W + 1.1, o.attT - o.attB + .9, (h - 1) * Z_HEAD + .5]]);
+    if (target.kind === 'ffn') for (let b = 0; b < L; b++) boxes.push([[0, yb(b) + o.ffn, Z_BR - .2], [W + 1.1, o.ffnH + .6, 1.6]]);
+    if (target.kind === 'resid') boxes.push([[0, yb(target.b) + (o.add1 + o.add2) / 2, 0], [W + 1.1, o.add2 - o.add1 + .7, .7]]);
+    this.marks = boxes.map(([c, sz], i) => {
+      const g = new THREE.BoxGeometry(...sz), fill = this.mesh(g, this.mat(col, .12), c), edge = this.edges(g, col, 1, c);
+      const tag = this.label(text, [c[0], c[1] + sz[1] / 2 + .55, c[2]], 'mtag ' + tone);
+      return { fill, edge, tag, tone };
+    });
+  }
   addRing(x, y, color, ud) {
     const g = new THREE.TorusGeometry(.17, .035, 6, 20);
     this.lit(this.mesh(g, this.mat(color, this.sel(ud) ? 1 : .75), [x, y, 0], ud), y);
@@ -238,10 +257,10 @@ export class Scene3D {
   headPanel(b, j, H, y0, X, W, words, focus) {
     const { Z_BR, Z_HEAD } = LAYOUT, z = Z_BR - .3 - j * Z_HEAD, opt = this.state.opt, key = `${b}.${j}`;
     const sel = this.sel({ kind: 'head', b, j }) || this.sel({ kind: 'attn', b }), muted = H.muted, pat = opt.pattern[key];
-    const g = new THREE.PlaneGeometry(W + .5, o.attT - o.attB + .4);
-    this.lit(this.mesh(g, new THREE.MeshBasicMaterial({ color: muted ? COL.grey : COL.cyan, transparent: true, opacity: sel ? .11 : .05, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
+    const g = new THREE.PlaneGeometry(W + .5, o.attT - o.attB + .4), loud = muted && this.state.loud;
+    if (!loud) this.lit(this.mesh(g, new THREE.MeshBasicMaterial({ color: muted ? COL.grey : COL.cyan, transparent: true, opacity: sel ? .11 : .05, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
       [0, y0 + (o.attB + o.attT) / 2, z], { kind: 'head', b, j }), y0 + (o.attB + o.attT) / 2);
-    this.edges(g, muted ? COL.grey : (pat ? COL.amber : COL.cyan), sel ? 1 : .6, [0, y0 + (o.attB + o.attT) / 2, z]);
+    this.edges(g, loud ? COL.red : muted ? COL.grey : (pat ? COL.amber : COL.cyan), loud ? .95 : sel ? 1 : .6, [0, y0 + (o.attB + o.attT) / 2, z]);
     this.label(`H${j + 1}${muted ? ' · muted' : pat ? ' · ' + pat : ''}`, [X(words.length - 1) + 1.15, y0 + o.attT, z], 'head', { kind: 'head', b, j });
     if (muted) return;
     // arcs: key u (bottom edge) -> query t (top edge); the focus token's arcs bright, others faint
@@ -379,6 +398,11 @@ export class Scene3D {
         const near = Math.max(0, 1 - Math.abs(wy - g.y) / (play ? 1.4 : 1.8));
         g.m.material.opacity = Math.min(1, play ? g.base * (.35 + .65 * near) + near * .75 : g.base + near * .22);
       }
+    }
+    for (const mk of this.marks || []) {                      // warn: blink; off: steady
+      const k = mk.tone === 'warn' ? .35 + .65 * Math.abs(Math.sin(t * 5)) : 1;
+      if (mk.fill.material) { mk.fill.material.opacity = .14 * k; mk.edge.material.opacity = k; }
+      if (mk.tag.element) mk.tag.element.style.opacity = mk.tone === 'warn' ? .55 + .45 * k : 1;
     }
     if (this.fpts) {
       const pos = this.fpts.geometry.attributes.position, v = new THREE.Vector3();
