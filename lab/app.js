@@ -96,7 +96,7 @@ function renderScore() {
   const lab = { capital: 'capital', name: 'name', agree: 'agree' };
   $('#score').replaceChildren(el('span', { class: 'sl' }, 'test'), ...Object.keys(lab).map(k => {
     const d = l[k] - b[k];
-    return el('div', { class: 'sc', title: `${k}: ${pct(l[k])} of held test sentences right (no changes: ${pct(b[k])})` },
+    return el('div', { class: 'sc', title: `${k}: ${pct(l[k])} of the test sentences right (no changes: ${pct(b[k])})` },
       el('span', {}, lab[k]), el('i', { style: `--v:${l[k]}` }), el('b', { class: d < -.005 ? 'down' : d > .005 ? 'up' : '' }, pct(l[k])));
   }));
 }

@@ -134,6 +134,7 @@ export class Scene3D {
     const resY = [yRes0];
     for (let b = 0; b < L; b++) resY.push(Y_B0 + b * BH + o.add1, Y_B0 + b * BH + o.add2);
     resY.push(YF + .4);
+    this.dims.resY = resY;
     const segOff = k => { if (k === 0) return false; const b = (k - 1) >> 1; return !!opt.residOff[`${b}.${(k - 1) % 2 ? 'ffn' : 'attn'}`]; };
     tr.ids.forEach((_, t) => {
       this.line([[X(t), -.05, 0], [X(t), yRes0, 0]], COL.green, .35);
@@ -231,17 +232,25 @@ export class Scene3D {
 
   /** Film/teaching overlay: a box around one part with a big tag. mark = { target, tone: 'warn' | 'off', text }.
    *  tone 'info' (cyan, steady) points at something that still works.
- *  target: { kind: 'head', b, j } | { kind: 'ffn' } (every block) | { kind: 'resid', b } | { kind: 'attnAll' } */
+ *  target: { kind: 'head', b, j } | { kind: 'ffn' } (every block) | { kind: 'resid', b, which } | { kind: 'attnAll' } | { kind: 'all' } */
   drawMark({ target, tone, text }) {
     const { W, L, h, T, X } = this.dims, { Y_B0, BH, Z_BR, Z_HEAD } = LAYOUT, col = tone === 'off' ? COL.red : tone === 'info' ? COL.cyan : COL.amber, boxes = [];
     const yb = b => Y_B0 + b * BH, zh = j => Z_BR - .3 - j * Z_HEAD;
     if (target.kind === 'head') boxes.push([[0, yb(target.b) + (o.attB + o.attT) / 2, zh(target.j)], [W + 1.1, o.attT - o.attB + .9, .35]]);
     if (target.kind === 'attnAll') for (let b = 0; b < L; b++) boxes.push([[0, yb(b) + (o.attB + o.attT) / 2, Z_BR - .3 - (h - 1) * Z_HEAD / 2], [W + 1.1, o.attT - o.attB + .9, (h - 1) * Z_HEAD + .5]]);
     if (target.kind === 'ffn') for (let b = 0; b < L; b++) boxes.push([[0, yb(b) + o.ffn, Z_BR - .2], [W + 1.1, o.ffnH + .6, 1.6]]);
-    if (target.kind === 'resid') boxes.push([[0, yb(target.b) + (o.add1 + o.add2) / 2, 0], [W + 1.1, o.add2 - o.add1 + .7, .7]]);
-    this.marks = boxes.map(([c, sz], i) => {
+    if (target.kind === 'resid') {                            // the lane segment this residual carries: k -> k + 1
+      const k = 2 * target.b + (target.which === 'ffn' ? 1 : 0), y0 = this.dims.resY[k], y1 = this.dims.resY[k + 1];
+      boxes.push([[0, (y0 + y1) / 2, 0], [W + .6, y1 - y0 + .3, .5]]);
+    }
+    if (target.kind === 'all') {                              // every part that holds weights; the tag only on attention
+      for (let b = 0; b < L; b++) boxes.push([[0, yb(b) + (o.attB + o.attT) / 2, Z_BR - .3 - (h - 1) * Z_HEAD / 2], [W + 1.1, o.attT - o.attB + .9, (h - 1) * Z_HEAD + .5]]);
+      for (let b = 0; b < L; b++) boxes.push([[0, yb(b) + o.ffn, Z_BR - .2], [W + 1.1, o.ffnH + .6, 1.6], 'notag']);
+      boxes.push([[0, LAYOUT.Y_EMB - .35, -.3], [W + 1.1, .5, 2.6], 'notag']);
+    }
+    this.marks = boxes.map(([c, sz, notag]) => {
       const g = new THREE.BoxGeometry(...sz), fill = this.mesh(g, this.mat(col, .12), c), edge = this.edges(g, col, 1, c);
-      const tag = this.label(text, [c[0], c[1] + sz[1] / 2 + .55, c[2]], 'mtag ' + tone);
+      const tag = notag ? {} : this.label(text, [c[0], c[1] + sz[1] / 2 + .55, c[2]], 'mtag ' + tone);
       return { fill, edge, tag, tone };
     });
   }

@@ -119,7 +119,7 @@ const NAME = 'i am alice . you are bob . who am i ?';   // one sentence for the 
 // ── what the model is doing at each moment (each state starts at its time) ──
 const base = (text, extra = {}) => ({ text, w: 'trained', opt: {}, sel: null, status: '2 blocks · 2 heads · <em>trained</em>', ...extra });
 const MK = (target, tone, text) => ({ mark: { target, tone, text } });
-const HEAD = { kind: 'head', b: 0, j: 1 }, FFN = { kind: 'ffn' }, RES = { kind: 'resid', b: 0 }, ATT = { kind: 'attnAll' };
+const HEAD = { kind: 'head', b: 0, j: 1 }, FFN = { kind: 'ffn' }, RES = { kind: 'resid', b: 0, which: 'attn' }, ATT = { kind: 'all' };
 const ST = [
   [0, base(NAME)],
   [M.b1, base(NAME, MK(HEAD, 'warn', 'HEAD 2'))],
@@ -132,8 +132,8 @@ const ST = [
   [M.b3, base(NAME, MK(RES, 'warn', 'RESIDUAL STREAM'))],
   [M.cut, base(NAME, { opt: { residOff: { '0.attn': true } }, ...MK(RES, 'off', 'RESIDUAL · CUT ✕'), status: 'residual stream, block 1: <b>CUT</b>' })],
   [M.b3end + .2, base(NAME)],
-  [M.b4, base(NAME, MK(ATT, 'warn', 'WEIGHTS'))],
-  [M.random, base(NAME, { w: 'random', ...MK(ATT, 'off', 'WEIGHTS · RANDOM ✕'), status: 'weights: <b>RANDOM</b> (never trained)' })],
+  [M.b4, base(NAME, MK(ATT, 'warn', 'ALL WEIGHTS'))],
+  [M.random, base(NAME, { w: 'random', ...MK(ATT, 'off', 'ALL WEIGHTS · RANDOM ✕'), status: 'weights: <b>RANDOM</b> (never trained)' })],
   [M.training2, base(NAME, { status: 'weights: <em>trained</em>' })],
 ];
 const SET = testSet(ix);
